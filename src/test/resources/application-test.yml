@@ -28,9 +28,6 @@ spring:
 
 # Placeholder values satisfy RequiredEnvVarsPostProcessor and BankingProperties @Validated.
 # Testcontainers @ServiceConnection overrides spring.datasource.* at runtime.
-DB_HOST: localhost
-DB_PORT: "3306"
-DB_NAME: banking_service_test
 DB_USERNAME: test_user
 DB_PASSWORD: test_password
 SSL_KEYSTORE_PATH: /tmp/test-keystore.jks

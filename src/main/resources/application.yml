@@ -16,7 +16,7 @@ spring:
       maximum-pool-size: 5
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: update
     open-in-view: false
   ssl:
     bundle:
@@ -53,12 +53,3 @@ server:
   ssl:
     bundle: banking-server
 
-banking:
-  db-host: ${DB_HOST}
-  db-name: ${DB_NAME}
-  db-username: ${DB_USERNAME}
-  db-password: ${DB_PASSWORD}
-  ssl-keystore-path: ${SSL_KEYSTORE_PATH}
-  ssl-keystore-password: ${SSL_KEYSTORE_PASSWORD}
-  ssl-truststore-path: ${SSL_TRUSTSTORE_PATH}
-  ssl-truststore-password: ${SSL_TRUSTSTORE_PASSWORD}
