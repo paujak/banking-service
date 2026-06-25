@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @Testcontainers
 @ActiveProfiles({"test", "test-tls"})
-class TlsConnectivityIT {
+class TlsConnectivity {
 
     @Container
     static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.4");
@@ -46,7 +46,7 @@ class TlsConnectivityIT {
                 .build();
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("https://localhost:8443/health"))
+                .uri(URI.create("https://localhost:8443/actuator/health"))
                 .GET()
                 .build();
 
@@ -72,7 +72,7 @@ class TlsConnectivityIT {
 
     private static SSLContext buildSslContext() throws Exception {
         KeyStore trustStore = KeyStore.getInstance("JKS");
-        try (InputStream is = TlsConnectivityIT.class.getResourceAsStream("/ssl/test-truststore.jks")) {
+        try (InputStream is = TlsConnectivity.class.getResourceAsStream("/ssl/test-truststore.jks")) {
             if (is == null) {
                 throw new IllegalStateException(
                         "test-truststore.jks not found on classpath. Run scripts/generate-certs.sh first.");
