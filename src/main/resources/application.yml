@@ -1,0 +1,55 @@
+spring:
+  application:
+    name: banking-service
+  datasource:
+    url: "jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:banking_service}?sslMode=VERIFY_CA\
+      &trustCertificateKeyStoreUrl=file:${SSL_TRUSTSTORE_PATH}\
+      &trustCertificateKeyStorePassword=${SSL_TRUSTSTORE_PASSWORD}\
+      &trustCertificateKeyStoreType=JKS\
+      &tlsVersions=TLSv1.2,TLSv1.3"
+    username: ${DB_USERNAME:banking_app}
+    password: ${DB_PASSWORD:changeme}
+    hikari:
+      initialization-fail-timeout: 120000
+      connection-timeout: 30000
+      keepalive-time: 60000
+      maximum-pool-size: 5
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  ssl:
+    bundle:
+      jks:
+        banking-server:
+          key:
+            alias: ${SSL_KEY_ALIAS:banking-service}
+          keystore:
+            location: file:${SSL_KEYSTORE_PATH}
+            password: ${SSL_KEYSTORE_PASSWORD}
+            type: JKS
+          truststore:
+            location: file:${SSL_TRUSTSTORE_PATH}
+            password: ${SSL_TRUSTSTORE_PASSWORD}
+            type: JKS
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+      discovery:
+        enabled: false
+  endpoint:
+    health:
+      show-details: never
+      show-components: never
+      probes:
+        enabled: false
+
+# HTTPS — port 8443 only. No plain HTTP connector is configured.
+server:
+  port: 8443
+  ssl:
+    bundle: banking-server
+

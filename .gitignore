@@ -30,3 +30,13 @@ replay_pid*
 .idea
 .classpath
 .run
+specs/
+coding-guidelines.md
+docs/
+scripts/
+
+# Generated certificates — never commit
+certs/
+
+# Test keystores — never commit
+src/test/resources/ssl/*.jks

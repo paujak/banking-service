@@ -1,0 +1,10 @@
+# application-test-tls.yml — activated alongside "test" profile for TlsConnectivityIT.
+#
+# Enables HTTPS on port 8443 using the test keystore configured in application-test.yml.
+# application-test.yml already points the banking-server SSL bundle to classpath test keystores.
+
+server:
+  port: 8443
+  ssl:
+    enabled: true
+    bundle: banking-server
