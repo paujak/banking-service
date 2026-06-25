@@ -32,3 +32,9 @@ replay_pid*
 .run
 specs/
 coding-guidelines.md
+
+# Generated certificates — never commit
+certs/
+
+# Test keystores — never commit
+src/test/resources/ssl/*.jks
