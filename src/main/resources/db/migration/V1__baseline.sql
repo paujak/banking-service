@@ -1,0 +1,3 @@
+-- V1__baseline.sql
+-- Baseline migration: confirms Flyway is correctly wired to the banking_service schema.
+-- Business entity tables are introduced in subsequent feature migrations.

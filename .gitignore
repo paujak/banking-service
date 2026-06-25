@@ -32,6 +32,8 @@ replay_pid*
 .run
 specs/
 coding-guidelines.md
+docs/
+scripts/
 
 # Generated certificates — never commit
 certs/
