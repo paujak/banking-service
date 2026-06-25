@@ -44,6 +44,18 @@ public class GlobalExceptionHandler {
                 .contentType(MediaType.APPLICATION_PROBLEM_JSON)
                 .body(pd);
     }
+    
+    @ExceptionHandler(InsufficientFundsException.class)
+    public ResponseEntity<ProblemDetail> handleInsufficientFunds(
+            InsufficientFundsException ex,
+            HttpServletRequest request) {
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST, "Insufficient funds for the transaction");
+        pd.setInstance(URI.create(request.getRequestURI()));
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .contentType(MediaType.APPLICATION_PROBLEM_JSON)
+                .body(pd);
+    }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ProblemDetail> handleAll(
