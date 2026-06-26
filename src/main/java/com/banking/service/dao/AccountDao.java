@@ -6,4 +6,6 @@ import java.util.UUID;
 
 public interface AccountDao {
     List<Account> getByUserId(UUID userId);
+
+    Account save(Account account);
 }

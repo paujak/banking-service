@@ -1,4 +1,4 @@
-package com.banking.service.dao.impl;
+package com.banking.service.dao.jpa;
 
 import com.banking.service.dao.AccountDao;
 import com.banking.service.entity.Account;
@@ -20,5 +20,10 @@ public class JpaAccountDaoImpl implements AccountDao {
     @Override
     public List<Account> getByUserId(UUID userId) {
         return accountRepository.getByUserId(userId);
+    }
+
+    @Override
+    public Account save(Account account) {
+        return accountRepository.save(account);
     }
 }
