@@ -2,11 +2,7 @@ spring:
   application:
     name: banking-service
   datasource:
-    url: "jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?sslMode=VERIFY_CA\
-      &trustCertificateKeyStoreUrl=${SSL_TRUSTSTORE_PATH}\
-      &trustCertificateKeyStorePassword=${SSL_TRUSTSTORE_PASSWORD}\
-      &trustCertificateKeyStoreType=JKS\
-      &tlsVersions=TLSv1.2,TLSv1.3"
+    url: "jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}"
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     hikari:
@@ -14,6 +10,12 @@ spring:
       connection-timeout: 30000
       keepalive-time: 60000
       maximum-pool-size: 5
+      data-source-properties:
+        sslMode: REQUIRED
+        trustCertificateKeyStoreUrl: ${SSL_TRUSTSTORE_PATH}
+        trustCertificateKeyStorePassword: ${SSL_TRUSTSTORE_PASSWORD}
+        trustCertificateKeyStoreType: JKS
+        tlsVersions: TLSv1.2,TLSv1.3
   jpa:
     hibernate:
       ddl-auto: update
@@ -47,9 +49,14 @@ management:
       probes:
         enabled: false
 
+logging:
+  level:
+    org.hibernate.orm.connections.pooling: WARN
+
 # HTTPS — port 8443 only. No plain HTTP connector is configured.
 server:
   port: 8443
   ssl:
+    enabled: true
     bundle: banking-server
 
