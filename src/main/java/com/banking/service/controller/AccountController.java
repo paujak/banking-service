@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/accounts")
+@RequestMapping("/api")
 public class AccountController {
     
     private final AccountService accountService;
@@ -21,7 +21,7 @@ public class AccountController {
         this.accountService = accountService;
     }
     
-    @GetMapping(value = "/api/users/{userId}/accounts", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/users/{userId}/accounts", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<AccountResponseDTO>> getAccountsOfUser(@PathVariable UUID userId) {
         List<AccountResponseDTO> accounts = accountService.getAccountsByUserId(userId);
         return ResponseEntity.ok(accounts);

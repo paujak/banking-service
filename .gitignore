@@ -34,6 +34,7 @@ specs/
 coding-guidelines.md
 docs/
 scripts/
+.DS_Store
 
 # Generated certificates — never commit
 certs/
