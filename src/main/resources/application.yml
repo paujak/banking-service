@@ -2,13 +2,13 @@ spring:
   application:
     name: banking-service
   datasource:
-    url: "jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:banking_service}?sslMode=VERIFY_CA\
-      &trustCertificateKeyStoreUrl=file:${SSL_TRUSTSTORE_PATH}\
+    url: "jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?sslMode=VERIFY_CA\
+      &trustCertificateKeyStoreUrl=${SSL_TRUSTSTORE_PATH}\
       &trustCertificateKeyStorePassword=${SSL_TRUSTSTORE_PASSWORD}\
       &trustCertificateKeyStoreType=JKS\
       &tlsVersions=TLSv1.2,TLSv1.3"
-    username: ${DB_USERNAME:banking_app}
-    password: ${DB_PASSWORD:changeme}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     hikari:
       initialization-fail-timeout: 120000
       connection-timeout: 30000
@@ -23,13 +23,13 @@ spring:
       jks:
         banking-server:
           key:
-            alias: ${SSL_KEY_ALIAS:banking-service}
+            alias: ${SSL_KEY_ALIAS}
           keystore:
-            location: file:${SSL_KEYSTORE_PATH}
+            location: ${SSL_KEYSTORE_PATH}
             password: ${SSL_KEYSTORE_PASSWORD}
             type: JKS
           truststore:
-            location: file:${SSL_TRUSTSTORE_PATH}
+            location: ${SSL_TRUSTSTORE_PATH}
             password: ${SSL_TRUSTSTORE_PASSWORD}
             type: JKS
 
