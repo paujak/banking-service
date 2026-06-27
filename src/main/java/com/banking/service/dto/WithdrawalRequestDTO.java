@@ -1,4 +1,4 @@
-package com.banking.service.controller;
+package com.banking.service.dto;
 
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.DecimalMin;

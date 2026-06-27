@@ -1,7 +1,7 @@
 package com.banking.service.service;
 
 import com.banking.service.constant.TransactionType;
-import com.banking.service.controller.WithdrawalRequestDTO;
+import com.banking.service.dto.WithdrawalRequestDTO;
 import com.banking.service.dto.AccountResponseDTO;
 import com.banking.service.dto.DepositRequestDTO;
 import com.banking.service.dto.DepositResponseDTO;

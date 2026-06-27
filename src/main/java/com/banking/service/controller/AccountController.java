@@ -3,6 +3,8 @@ package com.banking.service.controller;
 import com.banking.service.dto.AccountResponseDTO;
 import com.banking.service.dto.DepositRequestDTO;
 import com.banking.service.dto.DepositResponseDTO;
+import com.banking.service.dto.ExchangeRequestDTO;
+import com.banking.service.dto.WithdrawalRequestDTO;
 import com.banking.service.dto.WithdrawalResponseDTO;
 import com.banking.service.exception.AccountNotFoundException;
 import com.banking.service.exception.InsufficientFundsException;
@@ -54,20 +56,19 @@ public class AccountController {
     @PostMapping(value = "/accounts/{accountId}/transactions/withdraw", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<WithdrawalResponseDTO> withdrawMoneyFromAccount(@PathVariable UUID accountId, @Valid @RequestBody WithdrawalRequestDTO withdrawalRequestDTO) throws AccountNotFoundException, InsufficientFundsException {
         // TODO make a call to external service (https://tools-httpstatus.pickup-services.com/200 or Postman mockserver)
-        var transaction = accountService.withdrawMoneyFromAccount(accountId, withdrawalRequestDTO);
+        var withdrawalResponseDTO = accountService.withdrawMoneyFromAccount(accountId, withdrawalRequestDTO);
         return ResponseEntity
                 .ok()
-                .body(WithdrawalResponseDTO.builder()
-                        .transactionId(transaction.getId())
-                        .type(transaction.getType().name())
-                        .amount(transaction.getAmount())
-                        .currencyCode(transaction.getCurrency().getCode())
-                        .balanceAfter(transaction.getBalanceAfter())
-                        .description(transaction.getDescription())
-                        .timestamp(transaction.getTimestamp())
-                .build());
+                .body(withdrawalResponseDTO);
+                
     }
     
     @PostMapping(value = "/accounts/{accountId}/transactions/currency-exchange", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ExchangeResponseDTO> exchangeCurrency(@PathVariable UUID accountId, @Valid @RequestBody ExchangeRequestDTO exchangeRequestDTO) throws AccountNotFoundException, InsufficientFundsException {
+        var exchangeResponseDTO = accountService.exchangeCurrency(accountId, exchangeRequestDTO);
+        return ResponseEntity
+                .ok()
+                .body(exchangeResponseDTO);
+    }
     
 }
