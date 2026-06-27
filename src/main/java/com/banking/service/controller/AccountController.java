@@ -35,7 +35,16 @@ public class AccountController {
     
     @PostMapping(value = "/accounts/{accountId}/transactions/deposit", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<DepositResponseDTO> addMoneyToAccount(@PathVariable UUID accountId, @Valid @RequestBody DepositRequestDTO depositRequestDTO) throws AccountNotFoundException {
-        accountService.addMoneyToAccount(accountId, depositRequestDTO);
-        return ResponseEntity.ok().build();
+        var transaction = accountService.addMoneyToAccount(accountId, depositRequestDTO);
+        return ResponseEntity
+                .ok()
+                .body(DepositResponseDTO.builder()
+                        .transactionId(transaction.getId())
+                        .type(transaction.getType().name())
+                        .amountDeposited(transaction.getAmount())
+                        .balanceAfter(transaction.getBalanceAfter())
+                        .description(transaction.getDescription())
+                        .timestamp(transaction.getTimestamp())
+                .build());
     }
 }
