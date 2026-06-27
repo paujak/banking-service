@@ -29,6 +29,8 @@ public class AccountController {
         this.accountService = accountService;
     }
     
+    
+    // TODO move this to the User controller and use UserService/UserRepository to retrieve accounts for the user; then change request mapping
     @GetMapping(value = "/users/{userId}/accounts", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<AccountResponseDTO>> getAccountsOfUser(@PathVariable UUID userId) {
         List<AccountResponseDTO> accounts = accountService.getAccountsByUserId(userId);
@@ -53,6 +55,7 @@ public class AccountController {
     
     @PostMapping(value = "/accounts/{accountId}/transactions/withdraw", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<WithdrawResponseDTO> withdrawMoneyFromAccount(@PathVariable UUID accountId, @Valid @RequestBody WithdrawRequestDTO withdrawRequestDTO) throws AccountNotFoundException, InsufficientFundsException {
+        // TODO make a call to external service (https://tools-httpstatus.pickup-services.com/200 or Postman mockserver)
         var transaction = accountService.withdrawMoneyFromAccount(accountId, withdrawRequestDTO);
         return ResponseEntity
                 .ok()
