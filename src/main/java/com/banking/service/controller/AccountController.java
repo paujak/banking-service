@@ -39,6 +39,8 @@ public class AccountController {
         return ResponseEntity.ok(accounts);
     }
     
+    // TODO introduce response and request entity records for all endpoints to separate view from business logic 
+    
     @GetMapping(value = "/accounts/{accountId}/balance", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AccountResponseDTO> getAccount(@PathVariable UUID accountId) throws AccountNotFoundException {
         var accountResponseDTO = accountService.getAccount(accountId);
