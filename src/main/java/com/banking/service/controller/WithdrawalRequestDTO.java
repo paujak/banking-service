@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 
-public record WithdrawRequestDTO(
+public record WithdrawalRequestDTO(
         @NotNull
         @DecimalMin(value = "0.00", inclusive = false, message = "Amount must be greater than zero")
         BigDecimal amount,

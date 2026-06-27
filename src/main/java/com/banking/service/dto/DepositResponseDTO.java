@@ -10,7 +10,7 @@ public record DepositResponseDTO(
         UUID transactionId,
         String type,
         String currencyCode,
-        BigDecimal amountDeposited,
+        BigDecimal amount,
         BigDecimal balanceAfter,
         String description,
         Instant timestamp
