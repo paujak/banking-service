@@ -56,6 +56,18 @@ public class GlobalExceptionHandler {
                 .contentType(MediaType.APPLICATION_PROBLEM_JSON)
                 .body(pd);
     }
+    
+    @ExceptionHandler(AccountNotFoundException.class)
+    public ResponseEntity<ProblemDetail> handleAccountNotFound(
+            AccountNotFoundException ex,
+            HttpServletRequest request) {
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(
+                HttpStatus.UNPROCESSABLE_CONTENT, "Transaction cannot be completed");
+        pd.setInstance(URI.create(request.getRequestURI()));
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_CONTENT)
+                .contentType(MediaType.APPLICATION_PROBLEM_JSON)
+                .body(pd);
+    }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ProblemDetail> handleAll(

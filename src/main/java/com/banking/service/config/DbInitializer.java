@@ -1,10 +1,10 @@
 package com.banking.service.config;
 
-import com.banking.service.dao.AccountDao;
 import com.banking.service.dao.CurrencyDao;
 import com.banking.service.entity.Account;
 import com.banking.service.entity.Currency;
 import com.banking.service.entity.User;
+import com.banking.service.repository.AccountRepository;
 import com.banking.service.repository.UserRepository;
 import java.math.BigDecimal;
 import org.springframework.boot.CommandLineRunner;
@@ -15,12 +15,12 @@ import org.springframework.stereotype.Component;
 @Profile("dev")
 public class DbInitializer implements CommandLineRunner {
     
-    private AccountDao accountDao;
-    private CurrencyDao currencyDao;
-    private UserRepository userRepository;
+    private final CurrencyDao currencyDao;
+    private final UserRepository userRepository;
+    private final AccountRepository accountRepository;
     
-    public DbInitializer(AccountDao accountDao, CurrencyDao currencyDao, UserRepository userRepository) {
-        this.accountDao = accountDao;
+    public DbInitializer(AccountRepository accountRepository, CurrencyDao currencyDao, UserRepository userRepository) {
+        this.accountRepository = accountRepository;
         this.currencyDao = currencyDao;
         this.userRepository = userRepository;
     }
@@ -43,7 +43,7 @@ public class DbInitializer implements CommandLineRunner {
                     return userRepository.save(newUser);
                 });
 
-        if (accountDao.getByUserId(demoUser.getId()).isEmpty()) {
+        if (accountRepository.getByUserId(demoUser.getId()).isEmpty()) {
 
             Account primaryEur = Account.builder()
                     .user(demoUser)
@@ -69,9 +69,9 @@ public class DbInitializer implements CommandLineRunner {
                     .initialBalance(new BigDecimal("15000.00"))
                     .build();
 
-            accountDao.save(primaryEur);
-            accountDao.save(travelUsd);
-            accountDao.save(savingsEur);
+            accountRepository.save(primaryEur);
+            accountRepository.save(travelUsd);
+            accountRepository.save(savingsEur);
 
             System.out.println(">> Database successfully seeded with 1 User and 3 Accounts.");
         } else {

@@ -44,34 +44,27 @@ public class Transaction {
     @JoinColumn(name = "currency_code", nullable = false, updatable = false)
     private Currency currency;
     
-    @Column(name = "applied_rate", nullable = false, updatable = false)
+    @Column(name = "applied_rate", updatable = false)
     private BigDecimal appliedRate;
     
     @Column(name = "balance_after", nullable = false, updatable = false)
     private BigDecimal balanceAfter;
+    
+    @Column(name = "description", length = 255, updatable = false)
+    private String description;
     
     @Column(name = "timestamp", nullable = false, updatable = false, columnDefinition = "DATETIME(6)")
     @CreationTimestamp
     private Instant timestamp;
     
     @Builder
-    public Transaction(Account account, TransactionType type, BigDecimal amount, Currency currency, BigDecimal appliedRate) throws InsufficientFundsException {
+    public Transaction(Account account, TransactionType type, BigDecimal amount, BigDecimal balanceAfter, Currency currency, BigDecimal appliedRate, String description) {
         this.account = account;
         this.type = type;
         this.amount = amount;
         this.currency = currency;
-        this.appliedRate = appliedRate != null ? appliedRate : BigDecimal.ONE;
-        BigDecimal currentBalance = account.getBalance();
-        if (TransactionType.CREDIT.equals(type) || TransactionType.EXCHANGE_IN.equals(type)) {
-            this.balanceAfter = currentBalance.add(amount);
-        } else if (TransactionType.DEBIT.equals(type) || TransactionType.EXCHANGE_OUT.equals(type)) {
-            if (currentBalance.compareTo(amount) < 0) {
-                throw new InsufficientFundsException("Insufficient balance for debit transaction");
-            }
-            this.balanceAfter = currentBalance.subtract(amount);
-        } else {
-            throw new IllegalArgumentException("Invalid transaction type: " + type);
-        }
-        this.account.setBalance(this.balanceAfter);
+        this.appliedRate = appliedRate;
+        this.description = description;
+        this.balanceAfter = balanceAfter;
     }
 }

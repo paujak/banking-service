@@ -1,8 +1,8 @@
 package com.banking.service.constant;
 
 public enum TransactionType {
-    CREDIT,
-    DEBIT,
+    DEPOSIT,
+    WITHDRAW,
     EXCHANGE_IN,
     EXCHANGE_OUT,
 }
