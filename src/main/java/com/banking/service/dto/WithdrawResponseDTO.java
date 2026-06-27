@@ -6,13 +6,13 @@ import java.util.UUID;
 import lombok.Builder;
 
 @Builder
-public record DepositResponseDTO(
+public record WithdrawResponseDTO(
         UUID transactionId,
         String type,
         String currencyCode,
-        BigDecimal amountDeposited,
+        BigDecimal amountWithdrawn,
         BigDecimal balanceAfter,
         String description,
         Instant timestamp
-) 
-{}
+) {
+}
