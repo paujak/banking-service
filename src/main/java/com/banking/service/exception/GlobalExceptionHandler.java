@@ -101,7 +101,7 @@ public class GlobalExceptionHandler {
             HttpServletRequest request
     ) {
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(
-                HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage()
+                HttpStatus.INTERNAL_SERVER_ERROR, "External service error"
         );
         pd.setInstance(URI.create(request.getRequestURI()));
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -115,7 +115,7 @@ public class GlobalExceptionHandler {
             HttpServletRequest request
     ) {
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(
-                HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage()
+                HttpStatus.INTERNAL_SERVER_ERROR, "No exchange rate defined for the requested currency pair"
         );
         pd.setInstance(URI.create(request.getRequestURI()));
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

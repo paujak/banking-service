@@ -108,11 +108,6 @@ public class AccountService {
 
     @Transactional
     public TransactionResultDTO withdrawMoneyFromAccount(TransactionRequestDTO transactionRequestDTO) {
-        Account account = accountRepository.findById(transactionRequestDTO.sourceAccountId()).orElseThrow(() -> new AccountNotFoundException("Account not found"));
-        if (account.getBalance().compareTo(transactionRequestDTO.amount()) < 0) {
-            throw new InsufficientFundsException("Insufficient funds");
-        }
-        logEvent(transactionRequestDTO, account);
         var balanceAfter = account.getBalance().subtract(transactionRequestDTO.amount());
         account.setBalance(balanceAfter);
         Transaction transactionToStore = Transaction.builder()
@@ -197,6 +192,39 @@ public class AccountService {
         if (transactionRequestDTO.sourceAccountId().equals(transactionRequestDTO.destinationAccountId())) {
             throw new CurrencyExchangeWithinSameAccountException("Source and destination accounts must be different");
         }
+            BigDecimal amountToCredit = targetAccount.getBalance().add(transactionRequestDTO.amount().multiply(exchangeRate));
+            sourceAccount.setBalance(amountToDebit);
+            UUID correlationId = UUID.randomUUID();
+            Transaction debitTransaction = Transaction.builder()
+                    .correlationId(correlationId)
+                    .account(sourceAccount)
+                    .amount(transactionRequestDTO.amount())
+                    .appliedRate(exchangeRate)
+                    .balanceAfter(amountToDebit)
+                    .currency(sourceAccount.getCurrency())
+                    .type(TransactionType.EXCHANGE_OUT)
+                    .description(transactionRequestDTO.description())
+                    .build();
+            Transaction creditTransaction = Transaction.builder()
+                    .correlationId(correlationId)
+                    .account(targetAccount)
+                    .amount(transactionRequestDTO.amount().multiply(exchangeRate))
+                    .appliedRate(exchangeRate)
+                    .balanceAfter(amountToCredit)
+                    .currency(targetAccount.getCurrency())
+                    .type(TransactionType.EXCHANGE_IN)
+                    .description(transactionRequestDTO.description())
+                    .build();
+            accountRepository.save(sourceAccount);
+            accountRepository.save(targetAccount);
+            transactionRepository.save(debitTransaction);
+            transactionRepository.save(creditTransaction);
+            return ExchangeResultDTO.builder()
+                    .debitTransaction(transactionMapper.toTransactionResultDto(debitTransaction))
+                    .creditTransaction(transactionMapper.toTransactionResultDto(creditTransaction))
+                    .build();
+        } catch (ObjectOptimisticLockingFailureException e) {
+            throw new AccountConcurrentModificationException("Account was modified concurrently; please retry");
         }
     }
 }

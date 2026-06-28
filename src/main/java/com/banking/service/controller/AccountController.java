@@ -98,6 +98,9 @@ public class AccountController {
 
     @PostMapping(value = "/accounts/{accountId}/transactions/currency-exchange", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ExchangeResponse> exchangeCurrency(@PathVariable UUID accountId, @Valid @RequestBody ExchangeRequest exchangeRequest) {
+        if (accountId.equals(exchangeRequest.destinationAccountId())) {
+            throw new CurrencyExchangeWithinSameAccountException("Source and destination accounts must be different");
+        }
         TransactionRequestDTO transactionRequestDTO = TransactionRequestDTO.builder()
                 .amount(exchangeRequest.amountToTransfer())
                 .description(exchangeRequest.description())
