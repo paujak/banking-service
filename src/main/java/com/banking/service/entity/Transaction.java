@@ -19,7 +19,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
+import jakarta.persistence.PrePersist;
 
 @Entity
 @Table(name = "transaction")
@@ -59,8 +59,14 @@ public class Transaction {
     private String description;
 
     @Column(name = "timestamp", nullable = false, updatable = false, columnDefinition = "DATETIME(6)")
-    @CreationTimestamp
     private Instant timestamp;
+
+    @PrePersist
+    protected void prePersist() {
+        if (this.timestamp == null) {
+            this.timestamp = Instant.now();
+        }
+    }
 
     @Builder
     public Transaction(Account account,
@@ -70,7 +76,8 @@ public class Transaction {
                        BigDecimal balanceAfter,
                        Currency currency,
                        BigDecimal appliedRate,
-                       String description) {
+                       String description,
+                       Instant timestamp) {
         this.account = account;
         this.correlationId = correlationId;
         this.type = type;
@@ -79,6 +86,7 @@ public class Transaction {
         this.appliedRate = appliedRate;
         this.description = description;
         this.balanceAfter = balanceAfter;
+        this.timestamp = timestamp;
     }
 }
 
