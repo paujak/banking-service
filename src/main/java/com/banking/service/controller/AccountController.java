@@ -116,18 +116,9 @@ public class AccountController {
                 .type(TransactionType.EXCHANGE_OUT)
                 .build();
         ExchangeResultDTO exchangeResultDTO = accountService.exchangeCurrency(transactionRequestDTO);
-        ExchangeResponse exchangeResponse = ExchangeResponse.builder()
-                .amountInTargetCurrency(exchangeResultDTO.creditTransaction().amount())
-                .amountInSourceCurrency(exchangeResultDTO.debitTransaction().amount())
-                .sourceCurrencyCode(exchangeResultDTO.debitTransaction().currency().code())
-                .targetCurrencyCode(exchangeResultDTO.creditTransaction().currency().code())
-                .appliedRate(exchangeResultDTO.debitTransaction().appliedRate())
-                .description(exchangeResultDTO.debitTransaction().description())
-                .timestamp(exchangeResultDTO.debitTransaction().timestamp())
-                .build();
         return ResponseEntity
                 .ok()
-                .body(exchangeResponse);
+                .body(transactionMapper.toExchangeResponse(exchangeResultDTO));
     }
 
 }

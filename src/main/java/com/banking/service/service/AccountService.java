@@ -6,6 +6,7 @@ import com.banking.service.entity.Account;
 import com.banking.service.entity.Transaction;
 import com.banking.service.exception.AccountConcurrentModificationException;
 import com.banking.service.exception.AccountNotFoundException;
+import com.banking.service.exception.CurrencyExchangeWithinSameAccountException;
 import com.banking.service.exception.InsufficientFundsException;
 import com.banking.service.exception.NoExchangeRateDefined;
 import com.banking.service.mapper.AccountMapper;
@@ -135,7 +136,7 @@ public class AccountService {
     @Transactional
     public ExchangeResultDTO exchangeCurrency(TransactionRequestDTO transactionRequestDTO) {
         if (transactionRequestDTO.sourceAccountId().equals(transactionRequestDTO.destinationAccountId())) {
-            throw new IllegalArgumentException("Source and destination accounts must be different");
+            throw new CurrencyExchangeWithinSameAccountException("Source and destination accounts must be different");
         }
         Account sourceAccount = accountRepository.findById(transactionRequestDTO.sourceAccountId()).orElseThrow(() -> new AccountNotFoundException("Account not found"));
         if (sourceAccount.getBalance().compareTo(transactionRequestDTO.amount()) < 0) {

@@ -12,11 +12,13 @@ import com.banking.service.repository.ExchangeRateRepository;
 import com.banking.service.repository.TransactionRepository;
 import com.banking.service.repository.UserRepository;
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -30,17 +32,20 @@ public class DbInitializer implements CommandLineRunner {
     private final AccountRepository accountRepository;
     private final ExchangeRateRepository exchangeRateRepository;
     private final TransactionRepository transactionRepository;
+    private final JdbcTemplate jdbcTemplate;
 
     public DbInitializer(CurrencyDao currencyDao,
                          UserRepository userRepository,
                          AccountRepository accountRepository,
                          ExchangeRateRepository exchangeRateRepository,
-                         TransactionRepository transactionRepository) {
+                         TransactionRepository transactionRepository,
+                         JdbcTemplate jdbcTemplate) {
         this.currencyDao = currencyDao;
         this.userRepository = userRepository;
         this.accountRepository = accountRepository;
         this.exchangeRateRepository = exchangeRateRepository;
         this.transactionRepository = transactionRepository;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     @Override
@@ -53,16 +58,12 @@ public class DbInitializer implements CommandLineRunner {
 
         seedExchangeRates(eur, usd, sek, gbp, vnd);
 
-        User demoUser = userRepository.findByUsername("john_doe")
-                .orElseGet(() -> {
-                    User newUser = User.builder()
-                            .id(DEMO_USER_ID)
-                            .username("john_doe")
-                            .fullName("John Doe")
-                            .email("john.doe@example.com")
-                            .build();
-                    return userRepository.save(newUser);
-                });
+        // INSERT IGNORE with UUID_TO_BIN ensures binary(16) UUID matches Hibernate's storage format
+        jdbcTemplate.update(
+                "INSERT IGNORE INTO `user` (id, username, full_name, email, created_at) VALUES (UUID_TO_BIN(?), ?, ?, ?, ?)",
+                DEMO_USER_ID.toString(), "john_doe", "John Doe", "john.doe@example.com",
+                Timestamp.from(Instant.now()));
+        User demoUser = userRepository.findByUsername("john_doe").orElseThrow();
 
         if (accountRepository.getByUserId(demoUser.getId()).isEmpty()) {
             Account primaryEur = accountRepository.save(Account.builder()

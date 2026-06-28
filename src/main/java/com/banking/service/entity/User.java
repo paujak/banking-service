@@ -40,7 +40,7 @@ public class User {
     @Column(name = "email", unique = true, nullable = false)
     private String email;
     
-    @OneToMany(mappedBy = "user", fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     private List<Account> accounts;
     
     @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "DATETIME(6)")

@@ -31,7 +31,7 @@ public class Transaction {
     @Column(name = "id", unique = true, nullable = false, updatable = false)
     private UUID id;
 
-    @Column(name = "correlation_id", unique = true, updatable = false)
+    @Column(name = "correlation_id", updatable = false)
     private UUID correlationId;
 
     @ManyToOne(fetch = FetchType.LAZY)
