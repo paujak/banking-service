@@ -1,11 +1,13 @@
-package com.banking.service.dto;
+package com.banking.service.controller.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.util.UUID;
 
-public record ExchangeRequestDTO(
+@JsonIgnoreProperties(ignoreUnknown = true)
+public record ExchangeRequest(
         @NotNull
         UUID targetAccountId,
         @NotNull

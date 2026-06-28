@@ -1,12 +1,12 @@
-package com.banking.service.dto;
+package com.banking.service.controller.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
-import lombok.Builder;
 
-@Builder
-public record DepositResponseDTO(
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public record WithdrawalResponse(
         UUID transactionId,
         String type,
         String currencyCode,
@@ -14,5 +14,5 @@ public record DepositResponseDTO(
         BigDecimal balanceAfter,
         String description,
         Instant timestamp
-) 
-{}
+) {
+}

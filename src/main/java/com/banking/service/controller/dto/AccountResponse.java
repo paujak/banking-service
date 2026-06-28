@@ -1,9 +1,11 @@
-package com.banking.service.dto;
+package com.banking.service.controller.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import java.math.BigDecimal;
 import java.util.UUID;
 
-public record AccountResponseDTO(
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public record AccountResponse(
         UUID id,
         String accountNumber,
         String accountName,

@@ -1,15 +1,14 @@
-package com.banking.service.dto;
+package com.banking.service.service.dto;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
-import lombok.Builder;
 
-@Builder
-public record WithdrawalResponseDTO(
-        UUID transactionId,
+public record TransactionResultDTO(
+        UUID id,
         String type,
-        String currencyCode,
+        CurrencyDTO currency,
+        BigDecimal appliedRate,
         BigDecimal amount,
         BigDecimal balanceAfter,
         String description,

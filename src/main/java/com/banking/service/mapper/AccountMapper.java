@@ -1,7 +1,8 @@
 package com.banking.service.mapper;
 
-import com.banking.service.dto.AccountResponseDTO;
+import com.banking.service.controller.dto.AccountResponse;
 import com.banking.service.entity.Account;
+import com.banking.service.service.dto.AccountDTO;
 import java.util.List;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -10,7 +11,11 @@ import org.mapstruct.Mapping;
 public interface AccountMapper {
     
     @Mapping(source = "currency.code", target = "currencyCode")
-    AccountResponseDTO toDto(Account account);
+    AccountDTO toDto(Account account);
     
-    List<AccountResponseDTO> toDtoList(List<Account> accounts);
+    List<AccountDTO> toDtoList(List<Account> accounts);
+    
+    AccountResponse toResponse(AccountDTO accountDTO);
+    
+    List<AccountResponse> toResponseList(List<AccountDTO> accountDTOs);
 }

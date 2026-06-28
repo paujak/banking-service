@@ -1,12 +1,14 @@
-package com.banking.service.dto;
+package com.banking.service.controller.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 
-public record DepositRequestDTO(
+@JsonIgnoreProperties(ignoreUnknown = true)
+public record DepositRequest(
         @NotNull
         @DecimalMin(value = "0.00", inclusive = false, message = "Amount must be greater than zero")
         BigDecimal amount,

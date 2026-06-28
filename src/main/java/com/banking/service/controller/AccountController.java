@@ -1,14 +1,19 @@
 package com.banking.service.controller;
 
-import com.banking.service.dto.AccountResponseDTO;
-import com.banking.service.dto.DepositRequestDTO;
-import com.banking.service.dto.DepositResponseDTO;
-import com.banking.service.dto.ExchangeRequestDTO;
-import com.banking.service.dto.WithdrawalRequestDTO;
-import com.banking.service.dto.WithdrawalResponseDTO;
+import com.banking.service.constant.TransactionType;
+import com.banking.service.controller.dto.AccountResponse;
+import com.banking.service.controller.dto.DepositRequest;
+import com.banking.service.controller.dto.DepositResponse;
+import com.banking.service.controller.dto.WithdrawalRequest;
+import com.banking.service.controller.dto.WithdrawalResponse;
 import com.banking.service.exception.AccountNotFoundException;
 import com.banking.service.exception.InsufficientFundsException;
+import com.banking.service.mapper.AccountMapper;
+import com.banking.service.mapper.TransactionMapper;
 import com.banking.service.service.AccountService;
+import com.banking.service.service.dto.AccountDTO;
+import com.banking.service.service.dto.TransactionResultDTO;
+import com.banking.service.service.dto.TransactionRequestDTO;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
@@ -26,51 +31,63 @@ import org.springframework.web.bind.annotation.RestController;
 public class AccountController {
     
     private final AccountService accountService;
+    private final AccountMapper accountMapper;
+    private final TransactionMapper transactionMapper;
 
-    public AccountController(AccountService accountService) {
+    public AccountController(AccountService accountService, AccountMapper accountMapper, TransactionMapper transactionMapper) {
         this.accountService = accountService;
+        this.accountMapper = accountMapper;
+        this.transactionMapper = transactionMapper;
     }
     
-    
-    // TODO move this to the User controller and use UserService/UserRepository to retrieve accounts for the user; then change request mapping
+    // TODO move this endpoint to the User controller and use UserService/UserRepository to retrieve accounts for the user; then change request mapping
     @GetMapping(value = "/users/{userId}/accounts", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<AccountResponseDTO>> getAccountsOfUser(@PathVariable UUID userId) {
-        List<AccountResponseDTO> accounts = accountService.getAccountsByUserId(userId);
-        return ResponseEntity.ok(accounts);
+    public ResponseEntity<List<AccountResponse>> getAccountsOfUser(@PathVariable UUID userId) {
+        List<AccountDTO> accounts = accountService.getAccountsByUserId(userId);
+        return ResponseEntity.ok(accountMapper.toResponseList(accounts));
     }
-    
-    // TODO introduce response and request entity records for all endpoints to separate view from business logic 
     
     @GetMapping(value = "/accounts/{accountId}/balance", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<AccountResponseDTO> getAccount(@PathVariable UUID accountId) throws AccountNotFoundException {
-        var accountResponseDTO = accountService.getAccount(accountId);
-        return ResponseEntity.ok().body(accountResponseDTO);
+    public ResponseEntity<AccountResponse> getAccount(@PathVariable UUID accountId) throws AccountNotFoundException {
+        AccountDTO account = accountService.getAccount(accountId);
+        return ResponseEntity.ok().body(accountMapper.toResponse(account));
     }
     
     @PostMapping(value = "/accounts/{accountId}/transactions/deposit", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<DepositResponseDTO> addMoneyToAccount(@PathVariable UUID accountId, @Valid @RequestBody DepositRequestDTO depositRequestDTO) throws AccountNotFoundException {
-        var depositResponseDTO = accountService.addMoneyToAccount(accountId, depositRequestDTO);
+    public ResponseEntity<DepositResponse> addMoneyToAccount(@PathVariable UUID accountId, @Valid @RequestBody DepositRequest depositRequest) throws AccountNotFoundException {
+        TransactionRequestDTO transactionRequestDTO = TransactionRequestDTO.builder()
+                .amount(depositRequest.amount())
+                .description(depositRequest.description())
+                .destinationAccountId(accountId)
+                .type(TransactionType.DEPOSIT)
+                .build();
+        TransactionResultDTO transactionResultDTO = accountService.addMoneyToAccount(transactionRequestDTO);
         return ResponseEntity
                 .ok()
-                .body(depositResponseDTO);
+                .body(transactionMapper.toDepositResponse(transactionResultDTO));
     }
     
     @PostMapping(value = "/accounts/{accountId}/transactions/withdraw", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<WithdrawalResponseDTO> withdrawMoneyFromAccount(@PathVariable UUID accountId, @Valid @RequestBody WithdrawalRequestDTO withdrawalRequestDTO) throws AccountNotFoundException, InsufficientFundsException {
-        // TODO make a call to external service (https://tools-httpstatus.pickup-services.com/200 or Postman mockserver)
-        var withdrawalResponseDTO = accountService.withdrawMoneyFromAccount(accountId, withdrawalRequestDTO);
+    public ResponseEntity<WithdrawalResponse> withdrawMoneyFromAccount(@PathVariable UUID accountId, @Valid @RequestBody WithdrawalRequest withdrawalRequest) throws AccountNotFoundException, InsufficientFundsException {
+        TransactionRequestDTO transactionRequestDTO = TransactionRequestDTO.builder()
+                .amount(withdrawalRequest.amount())
+                .description(withdrawalRequest.description())
+                .sourceAccountId(accountId)
+                .type(TransactionType.WITHDRAWAL)
+                .build();
+        TransactionResultDTO transactionResultDTO = accountService.withdrawMoneyFromAccount(transactionRequestDTO);
         return ResponseEntity
                 .ok()
-                .body(withdrawalResponseDTO);
+                .body(transactionMapper.toWithdrawalResponse(transactionResultDTO));
                 
     }
     
-    @PostMapping(value = "/accounts/{accountId}/transactions/currency-exchange", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ExchangeResponseDTO> exchangeCurrency(@PathVariable UUID accountId, @Valid @RequestBody ExchangeRequestDTO exchangeRequestDTO) throws AccountNotFoundException, InsufficientFundsException {
-        var exchangeResponseDTO = accountService.exchangeCurrency(accountId, exchangeRequestDTO);
-        return ResponseEntity
-                .ok()
-                .body(exchangeResponseDTO);
-    }
+//    @PostMapping(value = "/accounts/{accountId}/transactions/currency-exchange", produces = MediaType.APPLICATION_JSON_VALUE)
+//    public ResponseEntity<ExchangeResponse> exchangeCurrency(@PathVariable UUID accountId, @Valid @RequestBody ExchangeRequest exchangeRequest) throws AccountNotFoundException, InsufficientFundsException {
+//        var exchangeResponseDTO = accountService.exchangeCurrency(accountId, exchangeRequest);
+//        return ResponseEntity
+//                .ok()
+//                .body(exchangeResponseDTO);
+//    }
     
 }
