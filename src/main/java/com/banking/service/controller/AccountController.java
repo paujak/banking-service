@@ -6,6 +6,7 @@ import com.banking.service.controller.dto.DepositRequest;
 import com.banking.service.controller.dto.DepositResponse;
 import com.banking.service.controller.dto.ExchangeRequest;
 import com.banking.service.controller.dto.ExchangeResponse;
+import com.banking.service.controller.dto.TransactionResponse;
 import com.banking.service.controller.dto.WithdrawalRequest;
 import com.banking.service.controller.dto.WithdrawalResponse;
 import com.banking.service.exception.AccountNotFoundException;
@@ -37,10 +38,14 @@ public class AccountController {
     private final AccountMapper accountMapper;
     private final TransactionMapper transactionMapper;
 
-    public AccountController(AccountService accountService, AccountMapper accountMapper, TransactionMapper transactionMapper) {
+    public AccountController(AccountService accountService,
+                             AccountMapper accountMapper,
+                             TransactionMapper transactionMapper,
+                             ExternalNotificationService externalNotificationService) {
         this.accountService = accountService;
         this.accountMapper = accountMapper;
         this.transactionMapper = transactionMapper;
+        this.externalNotificationService = externalNotificationService;
     }
 
     // TODO move this endpoint to the User controller and use UserService/UserRepository to retrieve accounts for the user; then change request mapping
@@ -54,6 +59,12 @@ public class AccountController {
     public ResponseEntity<AccountResponse> getAccount(@PathVariable UUID accountId) throws AccountNotFoundException {
         AccountDTO account = accountService.getAccount(accountId);
         return ResponseEntity.ok().body(accountMapper.toResponse(account));
+    }
+
+    @GetMapping(value = "/accounts/{accountId}/transactions", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<TransactionResponse>> getTransactionHistory(@PathVariable UUID accountId) {
+        List<TransactionResultDTO> transactions = accountService.getTransactionHistory(accountId);
+        return ResponseEntity.ok(transactions.stream().map(transactionMapper::toTransactionResponse).toList());
     }
 
     @PostMapping(value = "/accounts/{accountId}/transactions/deposit", produces = MediaType.APPLICATION_JSON_VALUE)

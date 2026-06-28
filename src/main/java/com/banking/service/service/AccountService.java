@@ -76,6 +76,17 @@ public class AccountService {
         return accountMapper.toDto(account);
     }
 
+    @Transactional(readOnly = true)
+    public List<TransactionResultDTO> getTransactionHistory(UUID accountId) {
+        if (!accountRepository.existsById(accountId)) {
+            throw new AccountNotFoundException("Account not found");
+        }
+        return transactionRepository.findByAccountIdOrderByTimestampDesc(accountId)
+                .stream()
+                .map(transactionMapper::toTransactionResultDto)
+                .toList();
+    }
+
     @Transactional
     public TransactionResultDTO addMoneyToAccount(TransactionRequestDTO transactionRequestDTO) {
         Account account = accountRepository.findById(transactionRequestDTO.destinationAccountId()).orElseThrow(() -> new AccountNotFoundException("Account not found"));
