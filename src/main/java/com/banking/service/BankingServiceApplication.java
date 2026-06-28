@@ -8,6 +8,9 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import tools.jackson.databind.ObjectMapper;
 
+// TODO add logging
+// TODO add javadoc comments on public methods and classes/records
+
 @SpringBootApplication
 public class BankingServiceApplication {
 
