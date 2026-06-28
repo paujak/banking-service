@@ -12,6 +12,7 @@ import com.banking.service.service.AccountService;
 import com.banking.service.service.ExternalLoggingService;
 import com.banking.service.service.dto.AccountDTO;
 import com.banking.service.service.dto.CurrencyDTO;
+import com.banking.service.controller.dto.ExchangeResponse;
 import com.banking.service.service.dto.ExchangeResultDTO;
 import com.banking.service.service.dto.TransactionResultDTO;
 import org.junit.jupiter.api.BeforeEach;
@@ -179,7 +180,18 @@ class AccountControllerTest {
                 .creditTransaction(creditTx)
                 .build();
 
+        var exchangeResponse = ExchangeResponse.builder()
+                .amountInSourceCurrency(new BigDecimal("100.00"))
+                .amountInTargetCurrency(new BigDecimal("110.00"))
+                .sourceCurrencyCode("EUR")
+                .targetCurrencyCode("USD")
+                .appliedRate(new BigDecimal("1.1"))
+                .description("FX")
+                .timestamp(Instant.now())
+                .build();
+
         when(accountService.exchangeCurrency(any())).thenReturn(exchangeResult);
+        when(transactionMapper.toExchangeResponse(exchangeResult)).thenReturn(exchangeResponse);
 
         mockMvc.perform(post("/api/accounts/{accountId}/transactions/currency-exchange", ACCOUNT_ID)
                         .contentType(MediaType.APPLICATION_JSON)
