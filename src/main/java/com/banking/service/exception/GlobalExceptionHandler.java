@@ -82,6 +82,19 @@ public class GlobalExceptionHandler {
                 .body(pd);
     }
 
+    @ExceptionHandler(CurrencyExchangeWithinSameAccountException.class)
+    public ResponseEntity<ProblemDetail> handleSameAccount(
+            CurrencyExchangeWithinSameAccountException ex,
+            HttpServletRequest request
+    ) {
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST, "Currency exchange cannot be performed within the same account");
+        pd.setInstance(URI.create(request.getRequestURI()));
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .contentType(MediaType.APPLICATION_PROBLEM_JSON)
+                .body(pd);
+    }
+    
     @ExceptionHandler(ExternalServiceException.class)
     public ResponseEntity<ProblemDetail> handleExternalServiceException(
             ExternalServiceException ex,

@@ -194,6 +194,9 @@ public class AccountService {
         } catch (IOException e) {
             logger.error("Error occurred while calling external service", e);
             throw new ExternalServiceException(e.getMessage());
+        if (transactionRequestDTO.sourceAccountId().equals(transactionRequestDTO.destinationAccountId())) {
+            throw new CurrencyExchangeWithinSameAccountException("Source and destination accounts must be different");
+        }
         }
     }
 }
