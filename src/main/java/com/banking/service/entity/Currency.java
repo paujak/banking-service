@@ -24,14 +24,9 @@ public class Currency {
     @Column(name = "name", nullable = false)
     private String name;
     
-    @Setter
-    @Column(name = "is_active", nullable = false)
-    private Boolean isActive;
-    
     @Builder
-    public Currency(String code, String name, Boolean isActive) {
+    public Currency(String code, String name) {
         this.code = code;
         this.name = name;
-        this.isActive = isActive;
     }
 }

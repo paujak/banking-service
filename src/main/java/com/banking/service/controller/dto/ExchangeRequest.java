@@ -1,7 +1,9 @@
 package com.banking.service.controller.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -9,9 +11,12 @@ import java.util.UUID;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record ExchangeRequest(
         @NotNull
-        UUID targetAccountId,
+        UUID destinationAccountId,
         @NotNull
         @DecimalMin(value = "0.00", inclusive = false, message = "Amount must be greater than zero")
-        BigDecimal amount
+        BigDecimal amountToTransfer,
+        @Nullable
+        @Max(value = 255, message = "Description must not exceed 255 characters")
+        String description
 ) {
 }

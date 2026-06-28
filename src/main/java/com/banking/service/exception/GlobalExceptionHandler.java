@@ -81,10 +81,24 @@ public class GlobalExceptionHandler {
                 .contentType(MediaType.APPLICATION_PROBLEM_JSON)
                 .body(pd);
     }
-    
+
     @ExceptionHandler(ExternalServiceException.class)
     public ResponseEntity<ProblemDetail> handleExternalServiceException(
             ExternalServiceException ex,
+            HttpServletRequest request
+    ) {
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(
+                HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage()
+        );
+        pd.setInstance(URI.create(request.getRequestURI()));
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .contentType(MediaType.APPLICATION_PROBLEM_JSON)
+                .body(pd);
+    }
+
+    @ExceptionHandler(NoExchangeRateDefined.class)
+    public ResponseEntity<ProblemDetail> handleNoExchangeRateDefined(
+            NoExchangeRateDefined ex,
             HttpServletRequest request
     ) {
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(

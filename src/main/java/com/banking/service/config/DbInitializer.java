@@ -28,10 +28,10 @@ public class DbInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         Currency eur = currencyDao.findByCode("EUR")
-                .orElseGet(() -> currencyDao.save(new Currency("EUR", "Euro", true)));
+                .orElseGet(() -> currencyDao.save(new Currency("EUR", "Euro")));
 
         Currency usd = currencyDao.findByCode("USD")
-                .orElseGet(() -> currencyDao.save(new Currency("USD", "US Dollar", true)));
+                .orElseGet(() -> currencyDao.save(new Currency("USD", "US Dollar")));
 
         User demoUser = userRepository.findByUsername("john_doe")
                 .orElseGet(() -> {
