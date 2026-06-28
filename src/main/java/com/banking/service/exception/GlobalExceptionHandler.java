@@ -7,10 +7,12 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.retry.ExhaustedRetryException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+
 
 /**
  * Global exception handler returning RFC 7807 Problem Details for all error responses.
@@ -133,6 +135,25 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .contentType(MediaType.APPLICATION_PROBLEM_JSON)
                 .body(pd);
+    }
+
+    @ExceptionHandler(ExhaustedRetryException.class)
+    public ResponseEntity<ProblemDetail> handleExhaustedRetry(
+            ExhaustedRetryException ex,
+            HttpServletRequest request) {
+        // Spring Retry wraps business exceptions in ExhaustedRetryException when no @Recover matches.
+        // Unwrap the cause and re-delegate to the appropriate specific handler.
+        Throwable cause = ex.getCause() != null ? ex.getCause() : ex;
+        if (cause instanceof AccountNotFoundException accountEx) {
+            return handleAccountNotFound(accountEx, request);
+        }
+        if (cause instanceof InsufficientFundsException fundsEx) {
+            return handleInsufficientFunds(fundsEx, request);
+        }
+        if (cause instanceof CurrencyExchangeWithinSameAccountException sameAccountEx) {
+            return handleSameAccount(sameAccountEx, request);
+        }
+        return handleAll(cause instanceof Exception e ? e : ex, request);
     }
 
     @ExceptionHandler(Exception.class)
