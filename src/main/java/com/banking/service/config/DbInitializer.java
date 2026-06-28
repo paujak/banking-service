@@ -15,6 +15,7 @@ import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
@@ -97,6 +98,19 @@ public class DbInitializer implements CommandLineRunner {
         } else {
             System.out.println(">> DB already seeded. Demo user id=" + demoUser.getId());
         }
+
+        // Always top up so each paginated account has enough history to test infinite scroll.
+        // Target: Primary Checking ≥ 55 tx (2+ pages), US Travel Vault ≥ 25 tx (1+ pages).
+        // Adds synthetic older transactions only if below the target — safe to run on every start.
+        var userAccounts = accountRepository.getByUserId(demoUser.getId());
+        userAccounts.stream()
+                .filter(a -> a.getAccountNumber().equals("LT993000123456789001"))
+                .findFirst()
+                .ifPresent(a -> topUpTransactions(a, 55));
+        userAccounts.stream()
+                .filter(a -> a.getAccountNumber().equals("LT993000123456789002"))
+                .findFirst()
+                .ifPresent(a -> topUpTransactions(a, 25));
     }
 
     private Currency ensureCurrency(String code, String name) {
@@ -186,5 +200,49 @@ public class DbInitializer implements CommandLineRunner {
                     .timestamp(now.minus(daysAgo, ChronoUnit.DAYS))
                     .build());
         }
+    }
+
+    /**
+     * Adds synthetic transactions until the account reaches {@code targetCount} total.
+     * Each run is idempotent — skips if already at or above the target.
+     * New transactions are placed further in the past than the standard seed data
+     * (starting 730 days back, one per ~14 days) so they appear as older history.
+     */
+    private void topUpTransactions(Account account, int targetCount) {
+        long existing = transactionRepository.countByAccountId(account.getId());
+        if (existing >= targetCount) return;
+
+        int toAdd = (int) (targetCount - existing);
+        var descriptions = List.of(
+                "Salary", "Rent", "Groceries", "Utilities", "Dining out",
+                "Online purchase", "Subscription", "Freelance income", "Bonus", "ATM withdrawal",
+                "Insurance premium", "Medical bill", "Transport", "Entertainment", "Home supplies"
+        );
+
+        Instant now = Instant.now();
+        BigDecimal runningBalance = new BigDecimal("3000.00");
+
+        for (int i = 0; i < toAdd; i++) {
+            // Pseudo-varied amount between 50 and 999 (no Random to keep it deterministic)
+            var amount = new BigDecimal(50 + Math.abs((i * 137 + 89) % 950) + ".00");
+            boolean isDeposit = i % 2 == 0 || runningBalance.compareTo(amount) < 0;
+            runningBalance = isDeposit ? runningBalance.add(amount) : runningBalance.subtract(amount);
+
+            // Spread evenly across the 730-day window that precedes existing seed data
+            int daysAgo = 730 + (toAdd - 1 - i) * 14;
+
+            transactionRepository.save(Transaction.builder()
+                    .account(account)
+                    .currency(account.getCurrency())
+                    .type(isDeposit ? TransactionType.DEPOSIT : TransactionType.WITHDRAWAL)
+                    .amount(amount)
+                    .balanceAfter(runningBalance)
+                    .description(descriptions.get(i % descriptions.size()))
+                    .timestamp(now.minus(daysAgo, ChronoUnit.DAYS))
+                    .build());
+        }
+
+        System.out.printf(">> Topped up %d transactions for account %s (%s)%n",
+                toAdd, account.getAccountNumber(), account.getCurrency().getCode());
     }
 }

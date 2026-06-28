@@ -9,4 +9,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface TransactionRepository extends JpaRepository<Transaction, UUID> {
     List<Transaction> findByAccountIdOrderByTimestampDesc(UUID accountId);
     List<Transaction> findByAccountIdOrderByTimestampDesc(UUID accountId, Pageable pageable);
+    long countByAccountId(UUID accountId);
 }
