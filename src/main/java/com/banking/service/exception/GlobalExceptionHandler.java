@@ -82,6 +82,18 @@ public class GlobalExceptionHandler {
                 .body(pd);
     }
 
+    @ExceptionHandler(AccountConcurrentModificationException.class)
+    public ResponseEntity<ProblemDetail> handleConcurrentModification(
+            AccountConcurrentModificationException ex,
+            HttpServletRequest request) {
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(
+                HttpStatus.CONFLICT, ex.getMessage());
+        pd.setInstance(URI.create(request.getRequestURI()));
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .contentType(MediaType.APPLICATION_PROBLEM_JSON)
+                .body(pd);
+    }
+
     @ExceptionHandler(CurrencyExchangeWithinSameAccountException.class)
     public ResponseEntity<ProblemDetail> handleSameAccount(
             CurrencyExchangeWithinSameAccountException ex,

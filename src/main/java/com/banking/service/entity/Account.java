@@ -9,6 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
@@ -51,6 +52,10 @@ public class Account {
     @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "DATETIME(6)")
     @CreationTimestamp
     private Instant createdAt;
+
+    @Version
+    @Column(name = "version")
+    private Long version;
     
     @Builder
     public Account(String accountNumber, String accountName, User user, BigDecimal initialBalance, Currency currency) {

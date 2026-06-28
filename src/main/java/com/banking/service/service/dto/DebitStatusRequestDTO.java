@@ -9,7 +9,7 @@ import lombok.Builder;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record DebitStatusRequestDTO(
         BigDecimal amount,
-        String userName,
+        String fullName,
         UUID accountId
 ) {
 }

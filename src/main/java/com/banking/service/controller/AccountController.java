@@ -10,10 +10,11 @@ import com.banking.service.controller.dto.TransactionResponse;
 import com.banking.service.controller.dto.WithdrawalRequest;
 import com.banking.service.controller.dto.WithdrawalResponse;
 import com.banking.service.exception.AccountNotFoundException;
-import com.banking.service.exception.InsufficientFundsException;
+import com.banking.service.exception.CurrencyExchangeWithinSameAccountException;
 import com.banking.service.mapper.AccountMapper;
 import com.banking.service.mapper.TransactionMapper;
 import com.banking.service.service.AccountService;
+import com.banking.service.service.ExternalLoggingService;
 import com.banking.service.service.dto.AccountDTO;
 import com.banking.service.service.dto.ExchangeResultDTO;
 import com.banking.service.service.dto.TransactionRequestDTO;
@@ -37,15 +38,16 @@ public class AccountController {
     private final AccountService accountService;
     private final AccountMapper accountMapper;
     private final TransactionMapper transactionMapper;
+    private final ExternalLoggingService externalLoggingService;
 
     public AccountController(AccountService accountService,
                              AccountMapper accountMapper,
                              TransactionMapper transactionMapper,
-                             ExternalNotificationService externalNotificationService) {
+                             ExternalLoggingService externalLoggingService) {
         this.accountService = accountService;
         this.accountMapper = accountMapper;
         this.transactionMapper = transactionMapper;
-        this.externalNotificationService = externalNotificationService;
+        this.externalLoggingService = externalLoggingService;
     }
 
     // TODO move this endpoint to the User controller and use UserService/UserRepository to retrieve accounts for the user; then change request mapping
@@ -83,6 +85,7 @@ public class AccountController {
 
     @PostMapping(value = "/accounts/{accountId}/transactions/withdraw", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<WithdrawalResponse> withdrawMoneyFromAccount(@PathVariable UUID accountId, @Valid @RequestBody WithdrawalRequest withdrawalRequest) {
+        externalLoggingService.notifyWithdrawal(accountId, withdrawalRequest.amount());
         TransactionRequestDTO transactionRequestDTO = TransactionRequestDTO.builder()
                 .amount(withdrawalRequest.amount())
                 .description(withdrawalRequest.description())

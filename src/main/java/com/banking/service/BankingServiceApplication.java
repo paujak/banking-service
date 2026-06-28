@@ -11,7 +11,10 @@ import tools.jackson.databind.ObjectMapper;
 // TODO add logging
 // TODO add javadoc comments on public methods and classes/records
 
+import org.springframework.retry.annotation.EnableRetry;
+
 @SpringBootApplication
+@EnableRetry
 public class BankingServiceApplication {
 
     public static void main(String[] args) {

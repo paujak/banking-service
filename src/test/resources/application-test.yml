@@ -34,3 +34,4 @@ SSL_KEYSTORE_PATH: /tmp/test-keystore.jks
 SSL_KEYSTORE_PASSWORD: changeit
 SSL_TRUSTSTORE_PATH: /tmp/test-truststore.jks
 SSL_TRUSTSTORE_PASSWORD: changeit
+DEBIT_CHECK_URL: https://httpstat.us/200
