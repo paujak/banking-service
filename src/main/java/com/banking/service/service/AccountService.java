@@ -19,6 +19,7 @@ import com.banking.service.service.dto.TransactionResultDTO;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Recover;
@@ -65,6 +66,17 @@ public class AccountService {
             throw new AccountNotFoundException("Account not found");
         }
         return transactionRepository.findByAccountIdOrderByTimestampDesc(accountId)
+                .stream()
+                .map(transactionMapper::toTransactionResultDto)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<TransactionResultDTO> getTransactionHistory(UUID accountId, int page, int size) {
+        if (!accountRepository.existsById(accountId)) {
+            throw new AccountNotFoundException("Account not found");
+        }
+        return transactionRepository.findByAccountIdOrderByTimestampDesc(accountId, PageRequest.of(page, size))
                 .stream()
                 .map(transactionMapper::toTransactionResultDto)
                 .toList();

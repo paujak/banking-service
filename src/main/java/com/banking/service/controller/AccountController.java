@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -64,8 +65,11 @@ public class AccountController {
     }
 
     @GetMapping(value = "/accounts/{accountId}/transactions", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<TransactionResponse>> getTransactionHistory(@PathVariable UUID accountId) {
-        List<TransactionResultDTO> transactions = accountService.getTransactionHistory(accountId);
+    public ResponseEntity<List<TransactionResponse>> getTransactionHistory(
+            @PathVariable UUID accountId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        List<TransactionResultDTO> transactions = accountService.getTransactionHistory(accountId, page, size);
         return ResponseEntity.ok(transactions.stream().map(transactionMapper::toTransactionResponse).toList());
     }
 

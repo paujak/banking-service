@@ -48,7 +48,8 @@ public class User {
     private Instant createdAt;
     
     @Builder
-    public User(String username, String fullName, String email) {
+    public User(UUID id, String username, String fullName, String email) {
+        this.id = id;
         this.username = username;
         this.fullName = fullName;
         this.email = email;
