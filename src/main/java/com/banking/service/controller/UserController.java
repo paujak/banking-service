@@ -10,6 +10,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,7 +27,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/users/{userId}")
 public class UserController {
-    
+
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
+
     private final UserService userService;
     private final AccountMapper accountMapper;
     
@@ -50,6 +54,7 @@ public class UserController {
     public ResponseEntity<List<AccountResponse>> getAccountsOfUser(
             @Parameter(description = "UUID of the user", example = "cfb095a4-bed2-4aa4-93c6-abf73d2dbbe1")
             @PathVariable UUID userId) {
+        logger.info("Get accounts: userId={}", userId);
         List<AccountDTO> accounts = userService.getUserAccounts(userId);
         return ResponseEntity.ok(accountMapper.toResponseList(accounts));
     }

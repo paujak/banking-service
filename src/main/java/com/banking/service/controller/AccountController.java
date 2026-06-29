@@ -26,6 +26,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -44,6 +46,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/accounts/{accountId}")
 public class AccountController {
+
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private final AccountService accountService;
     private final AccountMapper accountMapper;
@@ -74,6 +78,7 @@ public class AccountController {
     public ResponseEntity<AccountResponse> getAccount(
             @Parameter(description = "UUID of the account — obtain from GET /api/users/{userId}/accounts")
             @PathVariable UUID accountId) throws AccountNotFoundException {
+        logger.info("Get account: accountId={}", accountId);
         AccountDTO account = accountService.getAccount(accountId);
         return ResponseEntity.ok().body(accountMapper.toResponse(account));
     }
@@ -95,6 +100,7 @@ public class AccountController {
             @PathVariable UUID accountId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
+        logger.info("Get transactions: accountId={}, page={}, size={}", accountId, page, size);
         List<TransactionResultDTO> transactions = accountService.getTransactionHistory(accountId, page, size);
         return ResponseEntity.ok(transactions.stream().map(transactionMapper::toTransactionResponse).toList());
     }
@@ -114,6 +120,7 @@ public class AccountController {
     public ResponseEntity<DepositResponse> addMoneyToAccount(
             @Parameter(description = "UUID of the account — obtain from GET /api/users/{userId}/accounts")
             @PathVariable UUID accountId, @Valid @RequestBody DepositRequest depositRequest) {
+        logger.info("Deposit: accountId={}, amount={}", accountId, depositRequest.amount());
         TransactionRequestDTO transactionRequestDTO = TransactionRequestDTO.builder()
                 .amount(depositRequest.amount())
                 .description(depositRequest.description())
@@ -142,6 +149,7 @@ public class AccountController {
     public ResponseEntity<WithdrawalResponse> withdrawMoneyFromAccount(
             @Parameter(description = "UUID of the account — obtain from GET /api/users/{userId}/accounts")
             @PathVariable UUID accountId, @Valid @RequestBody WithdrawalRequest withdrawalRequest) {
+        logger.info("Withdraw: accountId={}, amount={}", accountId, withdrawalRequest.amount());
         externalLoggingService.notifyWithdrawal(accountId, withdrawalRequest.amount());
         TransactionRequestDTO transactionRequestDTO = TransactionRequestDTO.builder()
                 .amount(withdrawalRequest.amount())
@@ -173,6 +181,8 @@ public class AccountController {
     public ResponseEntity<ExchangeResponse> exchangeCurrency(
             @Parameter(description = "UUID of the source (debit) account — obtain from GET /api/users/{userId}/accounts")
             @PathVariable UUID accountId, @Valid @RequestBody ExchangeRequest exchangeRequest) {
+        logger.info("Exchange: sourceAccountId={}, destinationAccountId={}, amount={}",
+                accountId, exchangeRequest.destinationAccountId(), exchangeRequest.amountToTransfer());
         if (accountId.equals(exchangeRequest.destinationAccountId())) {
             throw new CurrencyExchangeWithinSameAccountException("Source and destination accounts must be different");
         }
