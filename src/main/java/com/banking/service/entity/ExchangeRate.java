@@ -17,6 +17,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/**
+ * JPA entity storing the conversion rate between two {@link Currency} instances.
+ */
 @Entity
 @Table(name = "exchange_rate")
 @Getter
@@ -39,6 +42,13 @@ public class ExchangeRate {
     @Column(name = "rate", nullable = false)
     private BigDecimal rate;
     
+    /**
+     * Creates a new ExchangeRate.
+     *
+     * @param rate         the conversion factor (1 unit of {@code fromCurrency} equals this many units of {@code toCurrency})
+     * @param fromCurrency source currency
+     * @param toCurrency   target currency
+     */
     @Builder
     public ExchangeRate(BigDecimal rate, Currency fromCurrency, Currency toCurrency) {
         this.rate = rate;

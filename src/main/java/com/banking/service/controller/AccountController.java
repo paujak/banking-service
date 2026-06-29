@@ -32,6 +32,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * REST controller for account-scoped operations.
+ * All endpoints are rooted at {@code /api/accounts/{accountId}}.
+ */
 @RestController
 @RequestMapping("/api/accounts/{accountId}")
 public class AccountController {
@@ -51,12 +55,27 @@ public class AccountController {
         this.externalLoggingService = externalLoggingService;
     }
 
+    /**
+     * Returns details and current balance for the specified account.
+     *
+     * @param accountId UUID of the account to retrieve
+     * @return 200 with {@link AccountResponse}, or 422 if the account does not exist
+     * @throws AccountNotFoundException if no account matches the given ID
+     */
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AccountResponse> getAccount(@PathVariable UUID accountId) throws AccountNotFoundException {
         AccountDTO account = accountService.getAccount(accountId);
         return ResponseEntity.ok().body(accountMapper.toResponse(account));
     }
 
+    /**
+     * Returns a paginated list of transactions for the specified account, ordered newest-first.
+     *
+     * @param accountId UUID of the account
+     * @param page      zero-based page index (default 0)
+     * @param size      number of transactions per page (default 20)
+     * @return 200 with the list of {@link TransactionResponse}
+     */
     @GetMapping(value = "/transactions", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<TransactionResponse>> getTransactionHistory(
             @PathVariable UUID accountId,
@@ -66,6 +85,13 @@ public class AccountController {
         return ResponseEntity.ok(transactions.stream().map(transactionMapper::toTransactionResponse).toList());
     }
 
+    /**
+     * Deposits money into the specified account.
+     *
+     * @param accountId      UUID of the destination account
+     * @param depositRequest deposit amount and optional description
+     * @return 200 with {@link DepositResponse} on success
+     */
     @PostMapping(value = "/transactions/deposit", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<DepositResponse> addMoneyToAccount(@PathVariable UUID accountId, @Valid @RequestBody DepositRequest depositRequest) {
         TransactionRequestDTO transactionRequestDTO = TransactionRequestDTO.builder()
@@ -80,6 +106,14 @@ public class AccountController {
                 .body(transactionMapper.toDepositResponse(transactionResultDTO));
     }
 
+    /**
+     * Withdraws money from the specified account.
+     * Notifies the external debit-check service before processing the withdrawal.
+     *
+     * @param accountId         UUID of the source account
+     * @param withdrawalRequest withdrawal amount and optional description
+     * @return 200 with {@link WithdrawalResponse} on success
+     */
     @PostMapping(value = "/transactions/withdraw", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<WithdrawalResponse> withdrawMoneyFromAccount(@PathVariable UUID accountId, @Valid @RequestBody WithdrawalRequest withdrawalRequest) {
         externalLoggingService.notifyWithdrawal(accountId, withdrawalRequest.amount());
@@ -96,6 +130,14 @@ public class AccountController {
 
     }
 
+    /**
+     * Exchanges currency between two accounts. Source and destination accounts must differ.
+     *
+     * @param accountId       UUID of the source (debit) account
+     * @param exchangeRequest destination account ID, amount to transfer, and optional description
+     * @return 200 with {@link ExchangeResponse} on success
+     * @throws CurrencyExchangeWithinSameAccountException if source and destination are the same account
+     */
     @PostMapping(value = "/transactions/currency-exchange", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ExchangeResponse> exchangeCurrency(@PathVariable UUID accountId, @Valid @RequestBody ExchangeRequest exchangeRequest) {
         if (accountId.equals(exchangeRequest.destinationAccountId())) {

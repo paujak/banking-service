@@ -28,6 +28,10 @@ import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Business logic for account queries and financial transactions (deposits, withdrawals, currency exchange).
+ * Write operations use optimistic locking with automatic retry on concurrent modification.
+ */
 @Service
 public class AccountService {
 
@@ -49,12 +53,26 @@ public class AccountService {
         this.transactionMapper = transactionMapper;
     }
 
+    /**
+     * Retrieves account details and current balance.
+     *
+     * @param accountId UUID of the account
+     * @return account data as {@link AccountDTO}
+     * @throws AccountNotFoundException if no account matches the given ID
+     */
     @Transactional(readOnly = true)
     public AccountDTO getAccount(UUID accountId) {
         Account account = accountRepository.findById(accountId).orElseThrow(() -> new AccountNotFoundException("Account not found"));
         return accountMapper.toDto(account);
     }
 
+    /**
+     * Returns the full transaction history for an account, ordered newest-first.
+     *
+     * @param accountId UUID of the account
+     * @return ordered list of {@link TransactionResultDTO}
+     * @throws AccountNotFoundException if no account matches the given ID
+     */
     @Transactional(readOnly = true)
     public List<TransactionResultDTO> getTransactionHistory(UUID accountId) {
         if (!accountRepository.existsById(accountId)) {
@@ -66,6 +84,15 @@ public class AccountService {
                 .toList();
     }
 
+    /**
+     * Returns a paginated transaction history for an account, ordered newest-first.
+     *
+     * @param accountId UUID of the account
+     * @param page      zero-based page index
+     * @param size      number of results per page
+     * @return ordered list of {@link TransactionResultDTO} for the requested page
+     * @throws AccountNotFoundException if no account matches the given ID
+     */
     @Transactional(readOnly = true)
     public List<TransactionResultDTO> getTransactionHistory(UUID accountId, int page, int size) {
         if (!accountRepository.existsById(accountId)) {
@@ -77,6 +104,14 @@ public class AccountService {
                 .toList();
     }
 
+    /**
+     * Credits money to an account and persists a DEPOSIT transaction.
+     * Retried up to 3 times on optimistic locking conflicts.
+     *
+     * @param transactionRequestDTO contains destination account ID and deposit amount
+     * @return result DTO with the created transaction and updated balance
+     * @throws AccountNotFoundException if the destination account does not exist
+     */
     @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3,
                backoff = @Backoff(delay = 100, multiplier = 1.5))
     @Transactional
@@ -97,11 +132,28 @@ public class AccountService {
         return transactionMapper.toTransactionResultDto(storedTransaction);
     }
 
+    /**
+     * Recovery handler invoked when all deposit retries are exhausted.
+     * Always throws {@link AccountConcurrentModificationException}.
+     *
+     * @param e   the optimistic locking exception that caused exhaustion
+     * @param dto the original request DTO
+     * @return never returns
+     */
     @Recover
     public TransactionResultDTO recoverTransaction(ObjectOptimisticLockingFailureException e, TransactionRequestDTO dto) {
         throw new AccountConcurrentModificationException("Account was modified concurrently; please retry");
     }
 
+    /**
+     * Debits money from an account and persists a WITHDRAWAL transaction.
+     * Retried up to 3 times on optimistic locking conflicts.
+     *
+     * @param transactionRequestDTO contains source account ID and withdrawal amount
+     * @return result DTO with the created transaction and updated balance
+     * @throws AccountNotFoundException   if the source account does not exist
+     * @throws InsufficientFundsException if the account balance is below the requested amount
+     */
     @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3,
                backoff = @Backoff(delay = 100, multiplier = 1.5))
     @Transactional
@@ -125,6 +177,18 @@ public class AccountService {
         return transactionMapper.toTransactionResultDto(storedTransaction);
     }
 
+    /**
+     * Converts an amount from a source account's currency to a destination account's currency,
+     * persisting an EXCHANGE_OUT transaction on the source and an EXCHANGE_IN transaction on the destination.
+     * Retried up to 3 times on optimistic locking conflicts.
+     *
+     * @param transactionRequestDTO contains source and destination account IDs and the amount to transfer
+     * @return {@link ExchangeResultDTO} holding both the debit and credit transaction results
+     * @throws AccountNotFoundException                    if either account does not exist
+     * @throws InsufficientFundsException                  if the source account balance is insufficient
+     * @throws NoExchangeRateDefined                       if no rate is configured for the currency pair
+     * @throws CurrencyExchangeWithinSameAccountException  if source and destination are the same account
+     */
     @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3,
                backoff = @Backoff(delay = 100, multiplier = 1.5))
     @Transactional
@@ -174,6 +238,14 @@ public class AccountService {
                 .build();
     }
 
+    /**
+     * Recovery handler invoked when all exchange retries are exhausted.
+     * Always throws {@link AccountConcurrentModificationException}.
+     *
+     * @param e   the optimistic locking exception that caused exhaustion
+     * @param dto the original request DTO
+     * @return never returns
+     */
     @Recover
     public ExchangeResultDTO recoverExchange(ObjectOptimisticLockingFailureException e, TransactionRequestDTO dto) {
         throw new AccountConcurrentModificationException("Account was modified concurrently; please retry");

@@ -21,6 +21,13 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    /**
+     * Handles bean validation errors (e.g. {@code @NotNull}, {@code @DecimalMin}).
+     *
+     * @param ex      the validation exception
+     * @param request the current HTTP request
+     * @return 400 Bad Request with problem details
+     */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ProblemDetail> handleValidation(
             MethodArgumentNotValidException ex,
@@ -34,6 +41,13 @@ public class GlobalExceptionHandler {
                 .body(pd);
     }
 
+    /**
+     * Handles requests to unknown static resource paths.
+     *
+     * @param ex      the not-found exception
+     * @param request the current HTTP request
+     * @return 404 Not Found with problem details
+     */
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ProblemDetail> handleNotFound(
             NoResourceFoundException ex,
@@ -47,6 +61,13 @@ public class GlobalExceptionHandler {
                 .body(pd);
     }
     
+    /**
+     * Handles requests for a user that does not exist.
+     *
+     * @param ex      the not-found exception
+     * @param request the current HTTP request
+     * @return 404 Not Found with problem details
+     */
     @ExceptionHandler(UserIsNotFoundException.class)
     public ResponseEntity<ProblemDetail> handleNotFound(
             UserIsNotFoundException ex,
@@ -61,6 +82,13 @@ public class GlobalExceptionHandler {
                 .body(pd);
     }
 
+    /**
+     * Handles withdrawal or exchange attempts where the account balance is insufficient.
+     *
+     * @param ex      the insufficient funds exception
+     * @param request the current HTTP request
+     * @return 400 Bad Request with problem details
+     */
     @ExceptionHandler(InsufficientFundsException.class)
     public ResponseEntity<ProblemDetail> handleInsufficientFunds(
             InsufficientFundsException ex,
@@ -73,6 +101,13 @@ public class GlobalExceptionHandler {
                 .body(pd);
     }
 
+    /**
+     * Handles requests with a malformed or unreadable request body.
+     *
+     * @param ex      the message-not-readable exception
+     * @param request the current HTTP request
+     * @return 400 Bad Request with problem details
+     */
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ProblemDetail> handleHttpMessageNotReadable(
             HttpMessageNotReadableException ex,
@@ -86,6 +121,13 @@ public class GlobalExceptionHandler {
                 .body(pd);
     }
 
+    /**
+     * Handles transactions referencing an account that does not exist.
+     *
+     * @param ex      the account not-found exception
+     * @param request the current HTTP request
+     * @return 422 Unprocessable Content with problem details
+     */
     @ExceptionHandler(AccountNotFoundException.class)
     public ResponseEntity<ProblemDetail> handleAccountNotFound(
             AccountNotFoundException ex,
@@ -98,6 +140,13 @@ public class GlobalExceptionHandler {
                 .body(pd);
     }
 
+    /**
+     * Handles concurrent account modification detected after retries are exhausted.
+     *
+     * @param ex      the concurrent modification exception
+     * @param request the current HTTP request
+     * @return 409 Conflict with problem details
+     */
     @ExceptionHandler(AccountConcurrentModificationException.class)
     public ResponseEntity<ProblemDetail> handleConcurrentModification(
             AccountConcurrentModificationException ex,
@@ -110,6 +159,13 @@ public class GlobalExceptionHandler {
                 .body(pd);
     }
 
+    /**
+     * Handles currency exchange requests where source and destination are the same account.
+     *
+     * @param ex      the same-account exchange exception
+     * @param request the current HTTP request
+     * @return 400 Bad Request with problem details
+     */
     @ExceptionHandler(CurrencyExchangeWithinSameAccountException.class)
     public ResponseEntity<ProblemDetail> handleSameAccount(
             CurrencyExchangeWithinSameAccountException ex,
@@ -123,6 +179,13 @@ public class GlobalExceptionHandler {
                 .body(pd);
     }
     
+    /**
+     * Handles failures from the external debit-check service.
+     *
+     * @param ex      the external service exception
+     * @param request the current HTTP request
+     * @return 500 Internal Server Error with problem details
+     */
     @ExceptionHandler(ExternalServiceException.class)
     public ResponseEntity<ProblemDetail> handleExternalServiceException(
             ExternalServiceException ex,
@@ -137,6 +200,13 @@ public class GlobalExceptionHandler {
                 .body(pd);
     }
 
+    /**
+     * Handles currency exchange requests for which no rate is configured.
+     *
+     * @param ex      the no-rate exception
+     * @param request the current HTTP request
+     * @return 500 Internal Server Error with problem details
+     */
     @ExceptionHandler(NoExchangeRateDefined.class)
     public ResponseEntity<ProblemDetail> handleNoExchangeRateDefined(
             NoExchangeRateDefined ex,
@@ -151,6 +221,14 @@ public class GlobalExceptionHandler {
                 .body(pd);
     }
 
+    /**
+     * Handles Spring Retry's wrapper exception when all retries are exhausted.
+     * Unwraps the cause and re-delegates to the appropriate specific handler.
+     *
+     * @param ex      the exhausted-retry exception wrapping the original cause
+     * @param request the current HTTP request
+     * @return response produced by the specific handler for the unwrapped cause
+     */
     @ExceptionHandler(ExhaustedRetryException.class)
     public ResponseEntity<ProblemDetail> handleExhaustedRetry(
             ExhaustedRetryException ex,
@@ -170,6 +248,13 @@ public class GlobalExceptionHandler {
         return handleAll(cause instanceof Exception e ? e : ex, request);
     }
 
+    /**
+     * Catch-all handler for any unhandled exception.
+     *
+     * @param ex      the unhandled exception
+     * @param request the current HTTP request
+     * @return 500 Internal Server Error with generic problem details
+     */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ProblemDetail> handleAll(
             Exception ex,

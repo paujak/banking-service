@@ -8,6 +8,14 @@ import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.util.UUID;
 
+/**
+ * Request body for initiating a currency exchange between two accounts.
+ * Unknown JSON fields are silently ignored.
+ *
+ * @param destinationAccountId UUID of the account to credit; must differ from the source account
+ * @param amountToTransfer     amount to deduct from the source account; must be greater than zero
+ * @param description          optional free-text note; max 255 characters
+ */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record ExchangeRequest(
         @NotNull

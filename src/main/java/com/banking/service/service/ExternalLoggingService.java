@@ -18,6 +18,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.ObjectMapper;
 
+/**
+ * Sends withdrawal notifications to a configured external debit-check service via HTTP POST.
+ */
 @Service
 public class ExternalLoggingService {
 
@@ -38,6 +41,14 @@ public class ExternalLoggingService {
         this.objectMapper = objectMapper;
     }
 
+    /**
+     * Notifies the external debit-check service about a withdrawal operation.
+     *
+     * @param accountId UUID of the account being debited
+     * @param amount    the amount being withdrawn
+     * @throws AccountNotFoundException if no account matches the given ID
+     * @throws ExternalServiceException if the external service returns a non-200 response or is unreachable
+     */
     public void notifyWithdrawal(UUID accountId, BigDecimal amount) {
         var account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new AccountNotFoundException("Account not found"));

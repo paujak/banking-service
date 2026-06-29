@@ -11,6 +11,9 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Business logic for user-related queries.
+ */
 @Service
 public class UserService {
     
@@ -23,6 +26,13 @@ public class UserService {
         this.accountMapper = accountMapper;
     }
     
+    /**
+     * Returns all accounts belonging to the specified user.
+     *
+     * @param userId UUID of the user
+     * @return list of {@link AccountDTO}; empty if the user has no accounts
+     * @throws UserIsNotFoundException if no user matches the given ID
+     */
     @Transactional(readOnly = true)
     public List<AccountDTO> getUserAccounts(UUID userId) {
         List<Account> accounts = userRepository.findFirstById(userId).map(User::getAccounts)

@@ -22,10 +22,15 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
+/**
+ * Seeds the database with demo currencies, exchange rates, a demo user, and sample transactions
+ * on application startup. Active only in the {@code dev} profile; safe to run multiple times (idempotent).
+ */
 @Component
 @Profile("dev")
 public class DbInitializer implements CommandLineRunner {
 
+    /** Fixed UUID of the demo user, ensuring a stable and reproducible ID across restarts. */
     static final UUID DEMO_USER_ID = UUID.fromString("cfb095a4-bed2-4aa4-93c6-abf73d2dbbe1");
 
     private final CurrencyDao currencyDao;
@@ -49,6 +54,12 @@ public class DbInitializer implements CommandLineRunner {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    /**
+     * Seeds all reference data and the demo user's accounts and transactions.
+     * Skips any data that already exists.
+     *
+     * @param args command-line arguments (unused)
+     */
     @Override
     public void run(String... args) {
         Currency eur = ensureCurrency("EUR", "Euro");

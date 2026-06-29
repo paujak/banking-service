@@ -7,6 +7,13 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 
+/**
+ * Request body for withdrawing money from an account.
+ * Unknown JSON fields are silently ignored.
+ *
+ * @param amount      withdrawal amount; must be greater than zero
+ * @param description optional free-text note; max 255 characters
+ */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record WithdrawalRequest(
         @NotNull

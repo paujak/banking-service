@@ -20,6 +20,10 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 
+/**
+ * JPA entity representing a bank account belonging to a {@link User}.
+ * Uses optimistic locking (via {@code @Version}) to prevent concurrent balance updates.
+ */
 @Entity
 @Table(name = "account")
 @Getter
@@ -57,6 +61,15 @@ public class Account {
     @Column(name = "version")
     private Long version;
     
+    /**
+     * Creates a new Account.
+     *
+     * @param accountNumber  unique account identifier (e.g. IBAN)
+     * @param accountName    human-readable label; defaults to {@code "Account " + accountNumber} if blank
+     * @param user           the owning user
+     * @param initialBalance opening balance
+     * @param currency       currency of this account
+     */
     @Builder
     public Account(String accountNumber, String accountName, User user, BigDecimal initialBalance, Currency currency) {
         this.accountNumber = accountNumber;

@@ -21,6 +21,11 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import jakarta.persistence.PrePersist;
 
+/**
+ * JPA entity recording a single financial movement on an {@link Account}.
+ * All fields are immutable after creation. The {@code timestamp} is set via
+ * a {@link jakarta.persistence.PrePersist} hook if not supplied at construction time.
+ */
 @Entity
 @Table(name = "transaction")
 @Getter
@@ -68,6 +73,19 @@ public class Transaction {
         }
     }
 
+    /**
+     * Creates a new Transaction.
+     *
+     * @param account       the account this transaction belongs to
+     * @param correlationId shared UUID linking the two legs of a currency exchange; {@code null} otherwise
+     * @param type          transaction type (DEPOSIT, WITHDRAWAL, EXCHANGE_IN, EXCHANGE_OUT)
+     * @param amount        transaction amount
+     * @param balanceAfter  account balance immediately after this transaction
+     * @param currency      currency of the transaction
+     * @param appliedRate   exchange rate applied; {@code null} for non-exchange transactions
+     * @param description   optional free-text note
+     * @param timestamp     time of the transaction; set automatically on persist if {@code null}
+     */
     @Builder
     public Transaction(Account account,
                        UUID correlationId,

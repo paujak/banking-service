@@ -10,6 +10,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/**
+ * JPA entity representing an ISO 4217 currency, identified by its three-letter code.
+ */
 @Entity
 @Table(name = "currency")
 @Getter
@@ -24,6 +27,12 @@ public class Currency {
     @Column(name = "name", nullable = false)
     private String name;
     
+    /**
+     * Creates a new Currency.
+     *
+     * @param code ISO 4217 three-letter currency code (e.g. {@code "EUR"})
+     * @param name human-readable currency name (e.g. {@code "Euro"})
+     */
     @Builder
     public Currency(String code, String name) {
         this.code = code;

@@ -7,6 +7,9 @@ import java.math.BigDecimal;
 import java.util.Optional;
 import org.springframework.stereotype.Component;
 
+/**
+ * JPA-backed implementation of {@link ExchangeRateDao}.
+ */
 @Component
 public class JpaExchangeRateDaoImpl implements ExchangeRateDao {
     
@@ -16,6 +19,7 @@ public class JpaExchangeRateDaoImpl implements ExchangeRateDao {
         this.exchangeRateRepository = exchangeRateRepository;
     }
     
+    /** {@inheritDoc} */
     @Override
     public Optional<BigDecimal> getExchangeRate(String sourceCurrencyCode, String destinationCurrencyCode) {
         return exchangeRateRepository.getExchangeRatesByFromCurrencyCodeAndToCurrencyCode(sourceCurrencyCode, destinationCurrencyCode).map(ExchangeRate::getRate);

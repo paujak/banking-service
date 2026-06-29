@@ -13,6 +13,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * REST controller for user-scoped operations.
+ * All endpoints are rooted at {@code /api/users/{userId}}.
+ */
 @RestController
 @RequestMapping("/api/users/{userId}")
 public class UserController {
@@ -26,6 +30,12 @@ public class UserController {
         this.accountMapper = accountMapper;
     }
 
+    /**
+     * Returns all accounts belonging to the specified user.
+     *
+     * @param userId UUID of the user
+     * @return 200 with a list of {@link AccountResponse}, or 404 if the user does not exist
+     */
     @GetMapping(value = "/accounts", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<AccountResponse>> getAccountsOfUser(@PathVariable UUID userId) {
         List<AccountDTO> accounts = userService.getUserAccounts(userId);
