@@ -1,10 +1,12 @@
 package com.banking.service;
 
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.servers.Server;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import tools.jackson.databind.ObjectMapper;
 
@@ -47,5 +49,22 @@ public class BankingServiceApplication {
     @Bean
     ObjectMapper objectMapper() {
         return new ObjectMapper();
+    }
+
+    /**
+     * Configures the OpenAPI metadata and default server URL for Swagger UI.
+     *
+     * @return OpenAPI definition for the Banking Service
+     */
+    @Bean
+    OpenAPI openAPI() {
+        return new OpenAPI()
+                .info(new Info()
+                        .title("Banking Service API")
+                        .description("REST API for managing bank accounts and financial transactions")
+                        .version("1.0.0"))
+                .addServersItem(new Server()
+                        .url("https://localhost:8443")
+                        .description("Local development (HTTPS)"));
     }
 }

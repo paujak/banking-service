@@ -19,6 +19,10 @@ import com.banking.service.service.dto.AccountDTO;
 import com.banking.service.service.dto.ExchangeResultDTO;
 import com.banking.service.service.dto.TransactionRequestDTO;
 import com.banking.service.service.dto.TransactionResultDTO;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
@@ -36,6 +40,7 @@ import org.springframework.web.bind.annotation.RestController;
  * REST controller for account-scoped operations.
  * All endpoints are rooted at {@code /api/accounts/{accountId}}.
  */
+@Tag(name = "Accounts", description = "Account balance, transaction history, deposits, withdrawals and currency exchange")
 @RestController
 @RequestMapping("/api/accounts/{accountId}")
 public class AccountController {
@@ -62,8 +67,13 @@ public class AccountController {
      * @return 200 with {@link AccountResponse}, or 422 if the account does not exist
      * @throws AccountNotFoundException if no account matches the given ID
      */
+    @Operation(summary = "Get account details", description = "Returns current balance and metadata for the given account")
+    @ApiResponse(responseCode = "200", description = "Account found")
+    @ApiResponse(responseCode = "422", description = "Account not found")
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<AccountResponse> getAccount(@PathVariable UUID accountId) throws AccountNotFoundException {
+    public ResponseEntity<AccountResponse> getAccount(
+            @Parameter(description = "UUID of the account — obtain from GET /api/users/{userId}/accounts")
+            @PathVariable UUID accountId) throws AccountNotFoundException {
         AccountDTO account = accountService.getAccount(accountId);
         return ResponseEntity.ok().body(accountMapper.toResponse(account));
     }
@@ -76,8 +86,12 @@ public class AccountController {
      * @param size      number of transactions per page (default 20)
      * @return 200 with the list of {@link TransactionResponse}
      */
+    @Operation(summary = "Get transaction history", description = "Returns paginated transactions for the account, ordered newest-first")
+    @ApiResponse(responseCode = "200", description = "Transaction list returned")
+    @ApiResponse(responseCode = "422", description = "Account not found")
     @GetMapping(value = "/transactions", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<TransactionResponse>> getTransactionHistory(
+            @Parameter(description = "UUID of the account — obtain from GET /api/users/{userId}/accounts")
             @PathVariable UUID accountId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
@@ -92,8 +106,14 @@ public class AccountController {
      * @param depositRequest deposit amount and optional description
      * @return 200 with {@link DepositResponse} on success
      */
+    @Operation(summary = "Deposit money", description = "Credits the given amount to the account and records a DEPOSIT transaction")
+    @ApiResponse(responseCode = "200", description = "Deposit successful")
+    @ApiResponse(responseCode = "400", description = "Invalid request (e.g. amount ≤ 0)")
+    @ApiResponse(responseCode = "422", description = "Account not found")
     @PostMapping(value = "/transactions/deposit", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<DepositResponse> addMoneyToAccount(@PathVariable UUID accountId, @Valid @RequestBody DepositRequest depositRequest) {
+    public ResponseEntity<DepositResponse> addMoneyToAccount(
+            @Parameter(description = "UUID of the account — obtain from GET /api/users/{userId}/accounts")
+            @PathVariable UUID accountId, @Valid @RequestBody DepositRequest depositRequest) {
         TransactionRequestDTO transactionRequestDTO = TransactionRequestDTO.builder()
                 .amount(depositRequest.amount())
                 .description(depositRequest.description())
@@ -114,8 +134,14 @@ public class AccountController {
      * @param withdrawalRequest withdrawal amount and optional description
      * @return 200 with {@link WithdrawalResponse} on success
      */
+    @Operation(summary = "Withdraw money", description = "Debits the given amount from the account, notifies the external debit-check service, and records a WITHDRAWAL transaction")
+    @ApiResponse(responseCode = "200", description = "Withdrawal successful")
+    @ApiResponse(responseCode = "400", description = "Insufficient funds or invalid request")
+    @ApiResponse(responseCode = "422", description = "Account not found")
     @PostMapping(value = "/transactions/withdraw", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<WithdrawalResponse> withdrawMoneyFromAccount(@PathVariable UUID accountId, @Valid @RequestBody WithdrawalRequest withdrawalRequest) {
+    public ResponseEntity<WithdrawalResponse> withdrawMoneyFromAccount(
+            @Parameter(description = "UUID of the account — obtain from GET /api/users/{userId}/accounts")
+            @PathVariable UUID accountId, @Valid @RequestBody WithdrawalRequest withdrawalRequest) {
         externalLoggingService.notifyWithdrawal(accountId, withdrawalRequest.amount());
         TransactionRequestDTO transactionRequestDTO = TransactionRequestDTO.builder()
                 .amount(withdrawalRequest.amount())
@@ -138,8 +164,15 @@ public class AccountController {
      * @return 200 with {@link ExchangeResponse} on success
      * @throws CurrencyExchangeWithinSameAccountException if source and destination are the same account
      */
+    @Operation(summary = "Exchange currency", description = "Transfers an amount from the source account to a destination account, applying the configured exchange rate")
+    @ApiResponse(responseCode = "200", description = "Exchange successful")
+    @ApiResponse(responseCode = "400", description = "Insufficient funds, same-account exchange, or invalid request")
+    @ApiResponse(responseCode = "422", description = "Source or destination account not found")
+    @ApiResponse(responseCode = "500", description = "No exchange rate configured for the currency pair")
     @PostMapping(value = "/transactions/currency-exchange", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ExchangeResponse> exchangeCurrency(@PathVariable UUID accountId, @Valid @RequestBody ExchangeRequest exchangeRequest) {
+    public ResponseEntity<ExchangeResponse> exchangeCurrency(
+            @Parameter(description = "UUID of the source (debit) account — obtain from GET /api/users/{userId}/accounts")
+            @PathVariable UUID accountId, @Valid @RequestBody ExchangeRequest exchangeRequest) {
         if (accountId.equals(exchangeRequest.destinationAccountId())) {
             throw new CurrencyExchangeWithinSameAccountException("Source and destination accounts must be different");
         }

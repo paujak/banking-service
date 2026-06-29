@@ -59,7 +59,15 @@ banking-service:
       external-service:
         url: ${DEBIT_CHECK_URL:https://5c3e37d3-c2fb-47e6-997b-6fd731899fa9.mock.pstmn.io/log-event}
 
-# HTTPS — port 8443 only. No plain HTTP connector is configured.
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui
+    try-it-out-enabled: true
+    operations-sorter: alpha
+
+
 server:
   port: 8443
   ssl:

@@ -1,126 +1,156 @@
 # Banking Service
 
-A production-grade Spring Boot (Java 25) microservice skeleton providing a health endpoint, Flyway-managed MySQL schema, and HTTPS-only transport.
+A Spring Boot 4.1.0 REST API for managing bank accounts and financial transactions. Built on Java 25 with HTTPS-only transport (TLS 1.2/1.3), Flyway-managed MySQL, and OpenAPI/Swagger UI.
 
 ## Prerequisites
 
 | Tool | Version | Notes |
 |------|---------|-------|
-| Java JDK | 25 | `java -version` must show 25.x |
+| Java JDK | 25 (Temurin) | `java -version` must show 25.x; install via [Adoptium](https://adoptium.net/) |
 | Maven | 3.9+ | `mvn -version` |
 | Docker + Compose | Latest | `docker compose version` |
-| OpenSSL | Any recent | `openssl version` |
 
 ---
 
-## Quickstart
+## Dev Mode Setup
 
-### 1. Generate TLS Credentials
+All environment variables have built-in defaults — **no exports required** for local development.
 
-```bash
-bash scripts/generate-certs.sh
-```
-
-Expected output: certificates written to `certs/` and test copies placed in `src/test/resources/ssl/`.  
-The script is idempotent — rerunning it when the certificate is still valid prints:
-```
-Certificates still valid — skipping regeneration.
-```
-
-### 2. Start the Local Database
+### 1. Start the database
 
 ```bash
 docker compose up -d
 ```
 
-Verify the container is healthy:
+Verify it is healthy before proceeding:
 ```bash
 docker compose ps
 ```
 
-The `banking-db` service should show `healthy` status.
+The `banking-db` service should show `healthy` (MySQL 8.4 on port 3306).
 
-### 3. Export Required Environment Variables
-
-All 8 variables are mandatory. The application refuses to start if any are missing.
-
-| Variable | Example Value | Description |
-|----------|---------------|-------------|
-| `DB_HOST` | `localhost` | MySQL hostname |
-| `DB_PORT` | `3306` | MySQL port (optional, defaults to 3306) |
-| `DB_NAME` | `banking_service` | Database name |
-| `DB_USERNAME` | `banking_user` | Database user |
-| `DB_PASSWORD` | *(from docker-compose.yml)* | Database password |
-| `SSL_KEYSTORE_PATH` | `$(pwd)/certs/keystore.jks` | JKS keystore path |
-| `SSL_KEYSTORE_PASSWORD` | `changeit` | Keystore password |
-| `SSL_TRUSTSTORE_PATH` | `$(pwd)/certs/truststore.jks` | JKS truststore path |
-| `SSL_TRUSTSTORE_PASSWORD` | `changeit` | Truststore password |
+### 2. Start the application
 
 ```bash
-export DB_HOST=localhost
-export DB_PORT=3306
-export DB_NAME=banking_service
-export DB_USERNAME=banking_user
-export DB_PASSWORD=<your-db-password>
-
-export SSL_KEYSTORE_PATH=$(pwd)/certs/keystore.jks
-export SSL_KEYSTORE_PASSWORD=changeit
-export SSL_TRUSTSTORE_PATH=$(pwd)/certs/truststore.jks
-export SSL_TRUSTSTORE_PASSWORD=changeit
+mvn spring-boot:run
 ```
 
-**Fail-fast check**: Unset any variable (e.g., `unset DB_HOST`) and start the application — it will refuse with a clear error naming the missing variable. Restore before proceeding.
-
-### 4. Build and Start
-
+Alternatively, build and run the JAR:
 ```bash
 mvn clean package -DskipTests
 java -jar target/banking-service-*.jar
 ```
 
-Expected: application starts within 30 seconds, Flyway applies `V1__baseline.sql`, and the server binds only to port **8443** (no port 8080).
+Expected: the application starts within ~15 seconds, Flyway applies migrations, and the server binds to port **8443** (HTTPS only). Look for:
+```
+Tomcat started on port 8443 (https)
+```
 
-### 5. Verify the Health Endpoint
+### 3. Verify the application is running
 
 ```bash
-curl --cacert certs/ca.crt https://localhost:8443/health
+curl -k https://localhost:8443/actuator/health
 ```
 
-Expected response (HTTP 200):
-```json
-{
-  "status": "UP",
-  "version": "0.0.1-SNAPSHOT",
-  "timestamp": "2026-06-25T12:00:00Z"
-}
+Expected: `{"status":"UP"}`
+
+> The `-k` flag skips certificate verification for the bundled self-signed cert. For CA-verified requests see [TLS Credentials](#tls-credentials).
+
+---
+
+## Swagger UI
+
+The application exposes Swagger UI at all times. Because the server uses a self-signed certificate, the browser must trust it before "Try it out" requests work.
+
+### Step 1 — Trust the self-signed certificate
+
+Open the following URL in your browser and accept the security warning:
+
+```
+https://localhost:8443/actuator/health
 ```
 
-Plain HTTP must be refused:
+Click **Advanced → Proceed to localhost (unsafe)** (Chrome) or the equivalent in your browser. This is a one-time step per browser session.
+
+### Step 2 — Open Swagger UI
+
+```
+https://localhost:8443/swagger-ui
+```
+
+You will see two groups: **Accounts** and **Users**.
+
+### Step 3 — Execute a request
+
+1. Expand any endpoint, e.g. `GET /api/users/{userId}/accounts`.
+2. Click **Try it out**.
+3. Fill in the required path parameters.
+4. Click **Execute** — the response body and HTTP status code appear below.
+
+### Finding seeded IDs
+
+`DbInitializer` seeds sample data into a fresh database on first startup. Query the running container for real UUIDs to use in Swagger:
+
 ```bash
-curl http://localhost:8080/health   # Connection refused — no HTTP port
-curl http://localhost:8443/health   # Error — HTTPS port rejects plain HTTP
+# List users
+docker exec -it $(docker compose ps -q banking-db) \
+  mysql -u banking_app -pchangeme banking_service \
+  -e "SELECT id, name FROM users;"
+
+# List accounts
+docker exec -it $(docker compose ps -q banking-db) \
+  mysql -u banking_app -pchangeme banking_service \
+  -e "SELECT id, user_id, currency_code, balance FROM accounts;"
 ```
 
-### 6. Verify Actuator Health
+Copy a UUID from the output and paste it into the Swagger path parameter field.
+
+---
+
+## Running Tests
+
+### Unit tests
 
 ```bash
-curl --cacert certs/ca.crt https://localhost:8443/actuator/health
+mvn test
 ```
 
-Expected: `{"status":"UP","components":{"db":{"status":"UP",...}}}`
+### Integration tests
 
-### 7. Run Integration Tests
-
-Testcontainers starts an ephemeral MySQL container automatically — no external database required.
+Testcontainers spins up an ephemeral MySQL container automatically — the running `banking-db` container is not used.
 
 ```bash
 mvn verify
 ```
 
-All three integration tests must pass:
-- `HealthEndpointIT` — health endpoint over HTTP (TLS disabled for this test)
-- `DatabaseConnectivityIT` — Flyway migration applied; `SELECT 1` succeeds
-- `TlsConnectivityIT` — HTTPS on 8443 accepted; plain HTTP refused (**requires `generate-certs.sh` to have been run first**)
+---
+
+## TLS Credentials
+
+### Dev default (bundled)
+
+The application defaults to `classpath:ssl/test-keystore.jks` and `classpath:ssl/test-truststore.jks`, which are pre-generated self-signed JKS files bundled in `src/main/resources/ssl/`. No setup is needed.
+
+---
+
+## Environment Variables
+
+All variables have defaults suitable for local development. Override them to connect to a different database or use custom TLS credentials.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DB_HOST` | `localhost` | MySQL hostname |
+| `DB_PORT` | `3306` | MySQL port |
+| `DB_NAME` | `banking_service` | Database name |
+| `DB_USERNAME` | `banking_app` | Database user |
+| `DB_PASSWORD` | `changeme` | Database password |
+| `DB_ROOT_PASSWORD` | `root_password` | MySQL root password (Docker only) |
+| `SSL_KEYSTORE_PATH` | `classpath:ssl/test-keystore.jks` | JKS keystore location |
+| `SSL_KEYSTORE_PASSWORD` | `changeit` | Keystore password |
+| `SSL_KEY_ALIAS` | `banking-service` | Key alias in the keystore |
+| `SSL_TRUSTSTORE_PATH` | `classpath:ssl/test-truststore.jks` | JKS truststore location |
+| `SSL_TRUSTSTORE_PASSWORD` | `changeit` | Truststore password |
+| `DEBIT_CHECK_URL` | *(Postman mock)* | External debit-check service URL |
 
 ---
 
@@ -128,42 +158,32 @@ All three integration tests must pass:
 
 ```
 src/main/java/com/banking/service/
-├── BankingServiceApplication.java   # Entry point
+├── BankingServiceApplication.java        # Entry point; registers HC5 client, ObjectMapper, OpenAPI beans
 ├── config/
-│   ├── BankingProperties.java       # @ConfigurationProperties — typed env var binding
-│   ├── RequiredEnvVarsPostProcessor.java  # Fail-fast env var validation at startup
-│   └── DataSourceStartupListener.java    # DB connectivity retry with exponential backoff
+│   ├── CorsConfig.java                   # CORS configuration
+│   └── DbInitializer.java                # Seeds currencies, exchange rates, and sample data on startup
+├── constant/
+│   └── TransactionType.java              # DEPOSIT, WITHDRAWAL, CURRENCY_EXCHANGE
 ├── controller/
-│   └── HealthController.java        # GET /health → HealthService
-├── dto/
-│   └── HealthResponse.java          # Immutable Java Record
+│   ├── AccountController.java            # /api/accounts/{accountId} — balance, transactions, deposit, withdraw, exchange
+│   ├── UserController.java               # /api/users/{userId}/accounts — list accounts for a user
+│   └── dto/                              # Request/response records (AccountResponse, DepositRequest, …)
+├── dao/
+│   ├── CurrencyDao.java                  # Interface
+│   ├── ExchangeRateDao.java              # Interface
+│   └── jpa/                              # JPA implementations
+├── entity/                               # JPA entities: Account, User, Transaction, Currency, ExchangeRate
 ├── exception/
-│   └── GlobalExceptionHandler.java  # @RestControllerAdvice — RFC 7807 ProblemDetail
+│   └── GlobalExceptionHandler.java       # @RestControllerAdvice — RFC 7807 ProblemDetail responses
+├── mapper/                               # MapStruct mappers: AccountMapper, TransactionMapper
+├── repository/                           # Spring Data JPA repositories
 └── service/
-    └── HealthService.java           # Business logic — injects BuildProperties
+    ├── AccountService.java               # Core business logic with Spring Retry
+    ├── UserService.java                  # User account queries
+    ├── ExternalLoggingService.java       # Apache HttpClient 5 client for debit-check notifications
+    └── dto/                              # Internal service transfer objects
 ```
 
-Layering constraint: **Controller → Service** (no controller may access a repository directly).
+Layering constraint: **Controller → Service → DAO / Repository** (controllers may not access repositories directly).
 
 ---
-
-## Credential Rotation
-
-No rebuild is required to rotate credentials. Update environment variables and restart:
-
-```bash
-export DB_PASSWORD=<new-password>
-java -jar target/banking-service-*.jar
-```
-
----
-
-## Architectural Decisions
-
-See [docs/decisions.md](docs/decisions.md) for full ADRs covering:
-- Spring Boot 4.1.0 + Java 25 (D-001)
-- SSL Bundles for TLS configuration (D-002)
-- `sslMode=VERIFY_CA` for MySQL connections (D-003)
-- HikariCP + spring-retry for DB startup resilience (D-004)
-- Fail-fast environment variable validation (D-005)
-- `openssl` + `keytool` for certificate generation (D-006)
