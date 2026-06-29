@@ -51,13 +51,6 @@ public class AccountController {
         this.externalLoggingService = externalLoggingService;
     }
 
-    // TODO move this endpoint to the User controller and use UserService/UserRepository to retrieve accounts for the user; then change request mapping
-    @GetMapping(value = "/users/{userId}/accounts", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<AccountResponse>> getAccountsOfUser(@PathVariable UUID userId) {
-        List<AccountDTO> accounts = accountService.getAccountsByUserId(userId);
-        return ResponseEntity.ok(accountMapper.toResponseList(accounts));
-    }
-
     @GetMapping(value = "/accounts/{accountId}/balance", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AccountResponse> getAccount(@PathVariable UUID accountId) throws AccountNotFoundException {
         AccountDTO account = accountService.getAccount(accountId);

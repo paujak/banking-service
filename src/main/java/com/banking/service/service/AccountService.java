@@ -50,12 +50,6 @@ public class AccountService {
     }
 
     @Transactional(readOnly = true)
-    public List<AccountDTO> getAccountsByUserId(UUID userId) {
-        List<Account> accounts = accountRepository.getByUserId(userId);
-        return accountMapper.toDtoList(accounts);
-    }
-
-    @Transactional(readOnly = true)
     public AccountDTO getAccount(UUID accountId) {
         Account account = accountRepository.findById(accountId).orElseThrow(() -> new AccountNotFoundException("Account not found"));
         return accountMapper.toDto(account);

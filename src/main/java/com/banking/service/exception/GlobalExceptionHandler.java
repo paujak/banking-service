@@ -46,6 +46,20 @@ public class GlobalExceptionHandler {
                 .contentType(MediaType.APPLICATION_PROBLEM_JSON)
                 .body(pd);
     }
+    
+    @ExceptionHandler(UserIsNotFoundException.class)
+    public ResponseEntity<ProblemDetail> handleNotFound(
+            UserIsNotFoundException ex,
+            HttpServletRequest request
+    ) {
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(
+                HttpStatus.NOT_FOUND, "User not found"
+        );
+        pd.setInstance(URI.create(request.getRequestURI()));
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .contentType(MediaType.APPLICATION_PROBLEM_JSON)
+                .body(pd);
+    }
 
     @ExceptionHandler(InsufficientFundsException.class)
     public ResponseEntity<ProblemDetail> handleInsufficientFunds(
