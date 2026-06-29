@@ -33,7 +33,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/accounts/{accountId}")
 public class AccountController {
 
     private final AccountService accountService;
@@ -51,13 +51,13 @@ public class AccountController {
         this.externalLoggingService = externalLoggingService;
     }
 
-    @GetMapping(value = "/accounts/{accountId}/balance", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AccountResponse> getAccount(@PathVariable UUID accountId) throws AccountNotFoundException {
         AccountDTO account = accountService.getAccount(accountId);
         return ResponseEntity.ok().body(accountMapper.toResponse(account));
     }
 
-    @GetMapping(value = "/accounts/{accountId}/transactions", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/transactions", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<TransactionResponse>> getTransactionHistory(
             @PathVariable UUID accountId,
             @RequestParam(defaultValue = "0") int page,
@@ -66,7 +66,7 @@ public class AccountController {
         return ResponseEntity.ok(transactions.stream().map(transactionMapper::toTransactionResponse).toList());
     }
 
-    @PostMapping(value = "/accounts/{accountId}/transactions/deposit", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/transactions/deposit", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<DepositResponse> addMoneyToAccount(@PathVariable UUID accountId, @Valid @RequestBody DepositRequest depositRequest) {
         TransactionRequestDTO transactionRequestDTO = TransactionRequestDTO.builder()
                 .amount(depositRequest.amount())
@@ -80,7 +80,7 @@ public class AccountController {
                 .body(transactionMapper.toDepositResponse(transactionResultDTO));
     }
 
-    @PostMapping(value = "/accounts/{accountId}/transactions/withdraw", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/transactions/withdraw", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<WithdrawalResponse> withdrawMoneyFromAccount(@PathVariable UUID accountId, @Valid @RequestBody WithdrawalRequest withdrawalRequest) {
         externalLoggingService.notifyWithdrawal(accountId, withdrawalRequest.amount());
         TransactionRequestDTO transactionRequestDTO = TransactionRequestDTO.builder()
@@ -96,7 +96,7 @@ public class AccountController {
 
     }
 
-    @PostMapping(value = "/accounts/{accountId}/transactions/currency-exchange", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/transactions/currency-exchange", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ExchangeResponse> exchangeCurrency(@PathVariable UUID accountId, @Valid @RequestBody ExchangeRequest exchangeRequest) {
         if (accountId.equals(exchangeRequest.destinationAccountId())) {
             throw new CurrencyExchangeWithinSameAccountException("Source and destination accounts must be different");
