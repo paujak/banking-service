@@ -56,30 +56,6 @@ class AccountControllerTest {
     }
 
     private static final UUID ACCOUNT_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
-    private static final UUID USER_ID    = UUID.fromString("22222222-2222-2222-2222-222222222222");
-
-    @Test
-    void shouldReturnAccounts_WhenUserHasAccounts() throws Exception {
-        var dto      = new AccountDTO(ACCOUNT_ID, "ACC001", "Main", new BigDecimal("100.00"), "EUR");
-        var response = new AccountResponse(ACCOUNT_ID, "ACC001", "Main", new BigDecimal("100.00"), "EUR");
-        when(accountService.getAccountsByUserId(USER_ID)).thenReturn(List.of(dto));
-        when(accountMapper.toResponseList(List.of(dto))).thenReturn(List.of(response));
-
-        mockMvc.perform(get("/api/users/{userId}/accounts", USER_ID))
-                .andExpect(status().isOk())
-                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
-    }
-
-    @Test
-    void shouldReturnEmptyList_WhenUserHasNoAccounts() throws Exception {
-        when(accountService.getAccountsByUserId(USER_ID)).thenReturn(List.of());
-        when(accountMapper.toResponseList(List.of())).thenReturn(List.of());
-
-        mockMvc.perform(get("/api/users/{userId}/accounts", USER_ID))
-                .andExpect(status().isOk())
-                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-                .andExpect(content().json("[]"));
-    }
 
     @Test
     void shouldReturnAccountBalance_WhenAccountExists() throws Exception {
@@ -88,7 +64,7 @@ class AccountControllerTest {
         when(accountService.getAccount(ACCOUNT_ID)).thenReturn(dto);
         when(accountMapper.toResponse(dto)).thenReturn(response);
 
-        mockMvc.perform(get("/api/accounts/{accountId}/balance", ACCOUNT_ID))
+        mockMvc.perform(get("/api/accounts/{accountId}", ACCOUNT_ID))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
     }
@@ -98,7 +74,7 @@ class AccountControllerTest {
         when(accountService.getAccount(ACCOUNT_ID))
                 .thenThrow(new AccountNotFoundException("Account not found"));
 
-        mockMvc.perform(get("/api/accounts/{accountId}/balance", ACCOUNT_ID))
+        mockMvc.perform(get("/api/accounts/{accountId}", ACCOUNT_ID))
                 .andExpect(status().isUnprocessableContent());
     }
 

@@ -61,20 +61,6 @@ class AccountServiceTest {
     }
 
     @Test
-    void shouldReturnAccountsByUserId_WhenUserHasAccounts() {
-        var userId = UUID.randomUUID();
-        var account = buildAccount(EUR, new BigDecimal("100.00"));
-        var dto = new AccountDTO(UUID.randomUUID(), "ACC001", "Main", new BigDecimal("100.00"), "EUR");
-
-        when(accountRepository.getByUserId(userId)).thenReturn(List.of(account));
-        when(accountMapper.toDtoList(List.of(account))).thenReturn(List.of(dto));
-
-        var result = accountService.getAccountsByUserId(userId);
-
-        assertThat(result).hasSize(1).containsExactly(dto);
-    }
-
-    @Test
     void shouldReturnAccount_WhenAccountExists() {
         var accountId = UUID.randomUUID();
         var account = buildAccount(EUR, new BigDecimal("200.00"));

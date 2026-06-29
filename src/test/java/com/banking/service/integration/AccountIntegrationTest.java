@@ -133,6 +133,14 @@ class AccountIntegrationTest {
         assertThat(response.getBody()).isEqualTo("[]");
     }
 
+    @Test
+    void shouldReturn404_WhenUserNotFound() {
+        var response = restTemplate.getForEntity(
+                url("/api/users/{userId}/accounts"), String.class, UUID.randomUUID());
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
     // ── GET /api/accounts/{accountId}/balance ────────────────────────────────
 
     @Test
@@ -142,7 +150,7 @@ class AccountIntegrationTest {
         var account  = createAndSaveAccount(user, currency, new BigDecimal("1234.56"));
 
         var response = restTemplate.getForEntity(
-                url("/api/accounts/{accountId}/balance"), String.class, account.getId());
+                url("/api/accounts/{accountId}"), String.class, account.getId());
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).contains("1234.56");
@@ -151,7 +159,7 @@ class AccountIntegrationTest {
     @Test
     void shouldReturn422_WhenAccountDoesNotExist() {
         var response = restTemplate.getForEntity(
-                url("/api/accounts/{accountId}/balance"), String.class, UUID.randomUUID());
+                url("/api/accounts/{accountId}"), String.class, UUID.randomUUID());
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
     }
