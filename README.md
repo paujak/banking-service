@@ -74,6 +74,8 @@ Click **Advanced → Proceed to localhost (unsafe)** (Chrome) or the equivalent 
 
 ### Step 2 — Open Swagger UI
 
+Swagger UI is only active when the `dev` Spring profile is enabled (the default for `mvn spring-boot:run`).
+
 ```
 https://localhost:8443/swagger-ui
 ```
