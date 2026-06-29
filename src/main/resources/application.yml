@@ -2,9 +2,9 @@ spring:
   application:
     name: banking-service
   datasource:
-    url: "jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}"
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    url: "jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:banking_service}"
+    username: ${DB_USERNAME:banking_app}
+    password: ${DB_PASSWORD:changeme}
     hikari:
       initialization-fail-timeout: 120000
       connection-timeout: 30000
@@ -12,8 +12,8 @@ spring:
       maximum-pool-size: 5
       data-source-properties:
         sslMode: REQUIRED
-        trustCertificateKeyStoreUrl: ${SSL_TRUSTSTORE_PATH}
-        trustCertificateKeyStorePassword: ${SSL_TRUSTSTORE_PASSWORD}
+        trustCertificateKeyStoreUrl: ${SSL_TRUSTSTORE_PATH:classpath:ssl/test-truststore.jks}
+        trustCertificateKeyStorePassword: ${SSL_TRUSTSTORE_PASSWORD:changeit}
         trustCertificateKeyStoreType: JKS
         tlsVersions: TLSv1.2,TLSv1.3
   jpa:
@@ -25,14 +25,14 @@ spring:
       jks:
         banking-server:
           key:
-            alias: ${SSL_KEY_ALIAS}
+            alias: ${SSL_KEY_ALIAS:banking-service}
           keystore:
-            location: ${SSL_KEYSTORE_PATH}
-            password: ${SSL_KEYSTORE_PASSWORD}
+            location: ${SSL_KEYSTORE_PATH:classpath:ssl/test-keystore.jks}
+            password: ${SSL_KEYSTORE_PASSWORD:changeit}
             type: JKS
           truststore:
-            location: ${SSL_TRUSTSTORE_PATH}
-            password: ${SSL_TRUSTSTORE_PASSWORD}
+            location: ${SSL_TRUSTSTORE_PATH:classpath:ssl/test-truststore.jks}
+            password: ${SSL_TRUSTSTORE_PASSWORD:changeit}
             type: JKS
 
 management:
@@ -57,7 +57,7 @@ banking-service:
   account:
     withdrawal:
       external-service:
-        url: ${DEBIT_CHECK_URL}
+        url: ${DEBIT_CHECK_URL:https://5c3e37d3-c2fb-47e6-997b-6fd731899fa9.mock.pstmn.io/log-event}
 
 # HTTPS — port 8443 only. No plain HTTP connector is configured.
 server:

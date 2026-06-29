@@ -1,0 +1,26 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="BankingServiceApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+    <option name="ACTIVE_PROFILES" value="dev,default" />
+    <option name="ALTERNATIVE_JRE_PATH" value="temurin-25" />
+    <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
+    <envs>
+      <env name="DB_HOST" value="localhost" />
+      <env name="DB_NAME" value="banking_service" />
+      <env name="DB_PASSWORD" value="changeme" />
+      <env name="DB_PORT" value="3306" />
+      <env name="DB_ROOT_PASSWORD" value="root_password" />
+      <env name="DB_USERNAME" value="banking_app" />
+      <env name="DEBIT_CHECK_URL" value="https://5c3e37d3-c2fb-47e6-997b-6fd731899fa9.mock.pstmn.io/log-event" />
+      <env name="SSL_KEY_ALIAS" value="banking-service" />
+      <env name="SSL_KEYSTORE_PASSWORD" value="changeit" />
+      <env name="SSL_KEYSTORE_PATH" value="classpath:ssl/test-keystore.jks" />
+      <env name="SSL_TRUSTSTORE_PASSWORD" value="changeit" />
+      <env name="SSL_TRUSTSTORE_PATH" value="classpath:ssl/test-truststore.jks" />
+    </envs>
+    <module name="banking-service" />
+    <option name="SPRING_BOOT_MAIN_CLASS" value="com.banking.service.BankingServiceApplication" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
