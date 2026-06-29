@@ -10,26 +10,28 @@ import com.banking.service.repository.ExchangeRateRepository;
 import com.banking.service.repository.TransactionRepository;
 import com.banking.service.repository.UserRepository;
 import com.banking.service.service.ExternalLoggingService;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.Method;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.http.io.entity.HttpEntities;
+import org.apache.hc.core5.http.message.BasicClassicHttpRequest;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.web.client.DefaultResponseErrorHandler;
-import org.springframework.web.client.RestTemplate;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.UUID;
 
@@ -54,7 +56,7 @@ class AccountIntegrationTest {
 
     @MockitoBean ExternalLoggingService externalLoggingService;
 
-    RestTemplate restTemplate;
+    CloseableHttpClient httpClient;
 
     @BeforeEach
     void setUp() {
@@ -64,13 +66,12 @@ class AccountIntegrationTest {
         userRepository.deleteAllInBatch();
         currencyRepository.deleteAllInBatch();
 
-        this.restTemplate = new RestTemplate();
-        this.restTemplate.setErrorHandler(new DefaultResponseErrorHandler() {
-            @Override
-            public boolean hasError(ClientHttpResponse response) {
-                return false; // never throw — let each test assert the status code manually
-            }
-        });
+        httpClient = HttpClients.createDefault();
+    }
+
+    @AfterEach
+    void tearDown() throws IOException {
+        httpClient.close();
     }
 
     // ── helpers ──────────────────────────────────────────────────────────────
@@ -101,160 +102,154 @@ class AccountIntegrationTest {
                 .build());
     }
 
-    private HttpEntity<String> jsonBody(String body) {
-        var headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        return new HttpEntity<>(body, headers);
+    private record HttpResponse(int status, String body) {}
+
+    private HttpResponse get(String url) throws IOException {
+        var request = new BasicClassicHttpRequest(Method.GET, url);
+        return httpClient.execute(request, response ->
+                new HttpResponse(response.getCode(), EntityUtils.toString(response.getEntity())));
+    }
+
+    private HttpResponse post(String url, String body) throws IOException {
+        var request = new BasicClassicHttpRequest(Method.POST, url);
+        request.setEntity(HttpEntities.create(body, ContentType.APPLICATION_JSON));
+        return httpClient.execute(request, response ->
+                new HttpResponse(response.getCode(), EntityUtils.toString(response.getEntity())));
     }
 
     // ── GET /api/users/{userId}/accounts ─────────────────────────────────────
 
     @Test
-    void shouldReturnAccountsForUser_WhenUserHasAccounts() {
+    void shouldReturnAccountsForUser_WhenUserHasAccounts() throws IOException {
         var currency = createAndSaveCurrency("EUR", "Euro");
         var user     = createAndSaveUser();
         createAndSaveAccount(user, currency, new BigDecimal("500.00"));
 
-        var response = restTemplate.getForEntity(
-                url("/api/users/{userId}/accounts"), String.class, user.getId());
+        var response = get(url("/api/users/" + user.getId() + "/accounts"));
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).contains("ACC-");
+        assertThat(response.status()).isEqualTo(HttpStatus.OK.value());
+        assertThat(response.body()).contains("ACC-");
     }
 
     @Test
-    void shouldReturnEmptyList_WhenUserHasNoAccounts() {
+    void shouldReturnEmptyList_WhenUserHasNoAccounts() throws IOException {
         var user = createAndSaveUser();
 
-        var response = restTemplate.getForEntity(
-                url("/api/users/{userId}/accounts"), String.class, user.getId());
+        var response = get(url("/api/users/" + user.getId() + "/accounts"));
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isEqualTo("[]");
+        assertThat(response.status()).isEqualTo(HttpStatus.OK.value());
+        assertThat(response.body()).isEqualTo("[]");
     }
 
     @Test
-    void shouldReturn404_WhenUserNotFound() {
-        var response = restTemplate.getForEntity(
-                url("/api/users/{userId}/accounts"), String.class, UUID.randomUUID());
+    void shouldReturn404_WhenUserNotFound() throws IOException {
+        var response = get(url("/api/users/" + UUID.randomUUID() + "/accounts"));
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(response.status()).isEqualTo(HttpStatus.NOT_FOUND.value());
     }
 
-    // ── GET /api/accounts/{accountId}/balance ────────────────────────────────
+    // ── GET /api/accounts/{accountId} ────────────────────────────────────────
 
     @Test
-    void shouldReturnAccountBalance_WhenAccountExists() {
+    void shouldReturnAccountBalance_WhenAccountExists() throws IOException {
         var currency = createAndSaveCurrency("EUR", "Euro");
         var user     = createAndSaveUser();
         var account  = createAndSaveAccount(user, currency, new BigDecimal("1234.56"));
 
-        var response = restTemplate.getForEntity(
-                url("/api/accounts/{accountId}"), String.class, account.getId());
+        var response = get(url("/api/accounts/" + account.getId()));
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).contains("1234.56");
+        assertThat(response.status()).isEqualTo(HttpStatus.OK.value());
+        assertThat(response.body()).contains("1234.56");
     }
 
     @Test
-    void shouldReturn422_WhenAccountDoesNotExist() {
-        var response = restTemplate.getForEntity(
-                url("/api/accounts/{accountId}"), String.class, UUID.randomUUID());
+    void shouldReturn422_WhenAccountDoesNotExist() throws IOException {
+        var response = get(url("/api/accounts/" + UUID.randomUUID()));
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+        assertThat(response.status()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT.value());
     }
 
     // ── GET /api/accounts/{accountId}/transactions ───────────────────────────
 
     @Test
-    void shouldReturnTransactionHistory_WhenAccountExists() {
+    void shouldReturnTransactionHistory_WhenAccountExists() throws IOException {
         var currency = createAndSaveCurrency("EUR", "Euro");
         var user     = createAndSaveUser();
         var account  = createAndSaveAccount(user, currency, new BigDecimal("300.00"));
 
-        var response = restTemplate.getForEntity(
-                url("/api/accounts/{accountId}/transactions"), String.class, account.getId());
+        var response = get(url("/api/accounts/" + account.getId() + "/transactions"));
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isEqualTo("[]");
+        assertThat(response.status()).isEqualTo(HttpStatus.OK.value());
+        assertThat(response.body()).isEqualTo("[]");
     }
 
     @Test
-    void shouldReturn422_WhenGettingTransactionsForNonExistentAccount() {
-        var response = restTemplate.getForEntity(
-                url("/api/accounts/{accountId}/transactions"), String.class, UUID.randomUUID());
+    void shouldReturn422_WhenGettingTransactionsForNonExistentAccount() throws IOException {
+        var response = get(url("/api/accounts/" + UUID.randomUUID() + "/transactions"));
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+        assertThat(response.status()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT.value());
     }
 
     // ── POST /api/accounts/{accountId}/transactions/deposit ──────────────────
 
     @Test
-    void shouldDepositMoneyAndPersistTransaction_WhenAccountExists() {
+    void shouldDepositMoneyAndPersistTransaction_WhenAccountExists() throws IOException {
         var currency = createAndSaveCurrency("EUR", "Euro");
         var user     = createAndSaveUser();
         var account  = createAndSaveAccount(user, currency, new BigDecimal("500.00"));
 
-        var response = restTemplate.exchange(
-                url("/api/accounts/{id}/transactions/deposit"),
-                HttpMethod.POST,
-                jsonBody("{\"amount\": 100.00, \"description\": \"Top-up\"}"),
-                String.class, account.getId());
+        var response = post(
+                url("/api/accounts/" + account.getId() + "/transactions/deposit"),
+                "{\"amount\": 100.00, \"description\": \"Top-up\"}");
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.status()).isEqualTo(HttpStatus.OK.value());
         assertThat(transactionRepository.findByAccountIdOrderByTimestampDesc(account.getId())).hasSize(1);
     }
 
     @Test
-    void shouldReturn422_WhenDepositingToNonExistentAccount() {
-        var response = restTemplate.exchange(
-                url("/api/accounts/{id}/transactions/deposit"),
-                HttpMethod.POST,
-                jsonBody("{\"amount\": 100.00}"),
-                String.class, UUID.randomUUID());
+    void shouldReturn422_WhenDepositingToNonExistentAccount() throws IOException {
+        var response = post(
+                url("/api/accounts/" + UUID.randomUUID() + "/transactions/deposit"),
+                "{\"amount\": 100.00}");
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+        assertThat(response.status()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT.value());
         assertThat(transactionRepository.count()).isZero();
     }
 
     // ── POST /api/accounts/{accountId}/transactions/withdraw ─────────────────
 
     @Test
-    void shouldWithdrawMoneyAndPersistTransaction_WhenSufficientFunds() {
+    void shouldWithdrawMoneyAndPersistTransaction_WhenSufficientFunds() throws IOException {
         var currency = createAndSaveCurrency("EUR", "Euro");
         var user     = createAndSaveUser();
         var account  = createAndSaveAccount(user, currency, new BigDecimal("500.00"));
 
-        var response = restTemplate.exchange(
-                url("/api/accounts/{id}/transactions/withdraw"),
-                HttpMethod.POST,
-                jsonBody("{\"amount\": 100.00, \"description\": \"ATM\"}"),
-                String.class, account.getId());
+        var response = post(
+                url("/api/accounts/" + account.getId() + "/transactions/withdraw"),
+                "{\"amount\": 100.00, \"description\": \"ATM\"}");
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.status()).isEqualTo(HttpStatus.OK.value());
         assertThat(transactionRepository.findByAccountIdOrderByTimestampDesc(account.getId())).hasSize(1);
     }
 
     @Test
-    void shouldReturn400AndNotPersistTransaction_WhenInsufficientFunds() {
+    void shouldReturn400AndNotPersistTransaction_WhenInsufficientFunds() throws IOException {
         var currency = createAndSaveCurrency("EUR", "Euro");
         var user     = createAndSaveUser();
         var account  = createAndSaveAccount(user, currency, new BigDecimal("50.00"));
 
-        var response = restTemplate.exchange(
-                url("/api/accounts/{id}/transactions/withdraw"),
-                HttpMethod.POST,
-                jsonBody("{\"amount\": 500.00}"),
-                String.class, account.getId());
+        var response = post(
+                url("/api/accounts/" + account.getId() + "/transactions/withdraw"),
+                "{\"amount\": 500.00}");
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.status()).isEqualTo(HttpStatus.BAD_REQUEST.value());
         assertThat(transactionRepository.count()).isZero();
     }
 
     // ── POST /api/accounts/{accountId}/transactions/currency-exchange ─────────
 
     @Test
-    void shouldExchangeCurrencyAndPersistTransactions_WhenValidAccounts() {
+    void shouldExchangeCurrencyAndPersistTransactions_WhenValidAccounts() throws IOException {
         var eur     = createAndSaveCurrency("EUR", "Euro");
         var usd     = createAndSaveCurrency("USD", "US Dollar");
         var user    = createAndSaveUser();
@@ -263,31 +258,25 @@ class AccountIntegrationTest {
         exchangeRateRepository.save(ExchangeRate.builder()
                 .fromCurrency(eur).toCurrency(usd).rate(new BigDecimal("1.10")).build());
 
-        var body = String.format(
-                "{\"destinationAccountId\": \"%s\", \"amountToTransfer\": 100.00, \"description\": \"FX\"}",
-                usdAcct.getId());
+        var response = post(
+                url("/api/accounts/" + eurAcct.getId() + "/transactions/currency-exchange"),
+                "{\"destinationAccountId\": \"" + usdAcct.getId() + "\", \"amountToTransfer\": 100.00, \"description\": \"FX\"}");
 
-        var response = restTemplate.exchange(
-                url("/api/accounts/{id}/transactions/currency-exchange"),
-                HttpMethod.POST, jsonBody(body), String.class, eurAcct.getId());
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.status()).isEqualTo(HttpStatus.OK.value());
         assertThat(transactionRepository.count()).isEqualTo(2);
     }
 
     @Test
-    void shouldReturn400AndNotPersistTransactions_WhenExchangingWithinSameAccount() {
+    void shouldReturn400AndNotPersistTransactions_WhenExchangingWithinSameAccount() throws IOException {
         var currency = createAndSaveCurrency("EUR", "Euro");
         var user     = createAndSaveUser();
         var account  = createAndSaveAccount(user, currency, new BigDecimal("500.00"));
-        var body     = String.format(
-                "{\"destinationAccountId\": \"%s\", \"amountToTransfer\": 100.00}", account.getId());
 
-        var response = restTemplate.exchange(
-                url("/api/accounts/{id}/transactions/currency-exchange"),
-                HttpMethod.POST, jsonBody(body), String.class, account.getId());
+        var response = post(
+                url("/api/accounts/" + account.getId() + "/transactions/currency-exchange"),
+                "{\"destinationAccountId\": \"" + account.getId() + "\", \"amountToTransfer\": 100.00}");
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.status()).isEqualTo(HttpStatus.BAD_REQUEST.value());
         assertThat(transactionRepository.count()).isZero();
     }
 }
